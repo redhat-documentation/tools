@@ -24,7 +24,14 @@ For example, if you are using the `bash` shell, you might add something like the
 +
 [subs=+quotes]
 ----
-alias newdoc="/home/marek/RH/newdoc/newdoc.py"
+alias newdoc="_/home/marek/RH/newdoc/_newdoc.py"
+----
++
+If you prefer `newdoc` to generate file without the explanatory comments, change the alias to include the `--no-comments` option:
++
+[subs=+quotes]
+----
+alias newdoc="_/home/marek/RH/newdoc/_newdoc.py --no-comments"
 ----
 
 [id="new-module"]

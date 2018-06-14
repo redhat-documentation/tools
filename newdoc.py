@@ -38,6 +38,9 @@ parser.add_argument("-r", "--reference",
                     metavar="title",
                     nargs="+",
                     type=str)
+parser.add_argument("-C", "--no-comments",
+                    help="Generate the file without any comments.",
+                    action="store_true")
 
 # Doesn't do anything right now
 # parser.add_argument("-d", "--module-dir",
@@ -109,7 +112,21 @@ def translate_template(template: str, title: str, converted_id: str) -> str:
     return template
 
 
-def create_module(title: str, doc_type: str) -> None:
+def strip_comments(adoc_text: str) -> str:
+    """
+    This function accepts AsciiDoc source and returns a copy of it
+    that is stripped of all line starting with "//".
+    """
+
+    # Split the text into lines and select only those that don't start
+    # with "//"
+    lines = adoc_text.splitlines()
+    no_comments = [l for l in lines if not l.startswith("//")]
+
+    # Connect the lines again, deleting empty leading lines
+    return "\n".join(no_comments).lstrip()
+
+def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
     """
     The main function that writes new files
     """
@@ -130,6 +147,10 @@ def create_module(title: str, doc_type: str) -> None:
 
     # Prepare the content of the new module
     module_content = translate_template(template, title, converted_id)
+
+    # If the --no-comments option is selected, delete all comments
+    if delete_comments:
+        module_content = strip_comments(module_content)
 
     # Write the module
     out_file = converted_id + ".adoc"
@@ -160,5 +181,5 @@ if __name__ == "__main__":
         for doc_type, title_list in valid_args:
             # Doc type options accept multiple titles to create multiple files
             for title in title_list:
-                create_module(title, doc_type)
+                create_module(title, doc_type, args.no_comments)
 
