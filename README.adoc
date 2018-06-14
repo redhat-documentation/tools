@@ -1,0 +1,67 @@
+:toc:
+
+[id="readme"]
+= README: The `newdoc` script
+
+[id="new-module"]
+== How do I add a new module?
+
+[discrete]
+=== Prerequisites
+
+* In your shell configuration, add an alias to the `newdoc` script:
++
+[subs=+quotes]
+----
+alias newdoc=_path-to-newdoc-repo_/newdoc.py
+----
+
+[discrete]
+=== Procedure
+
+. In the directory where modules are located, use the `newdoc` script to create a new file:
++
+[subs=+quotes]
+----
+_modules-dir_]$ newdoc _--procedure_ "_Setting up thing_"
+----
++
+The script also accepts the `--concept` and `--reference` options. You can use these short forms instead: `-p`, `-c`, and `-r`.
+
+. Rewrite the information in the template with your docs.
+
+[id="new-assembly"]
+== How do I add a new assembly?
+
+[discrete]
+=== Prerequisites
+
+* In your shell configuration, add an alias to the `newdoc` script:
++
+[subs=+quotes]
+----
+alias newdoc=_path-to-newdoc-repo_/newdoc.py
+----
+
+[discrete]
+=== Procedure
+
+. In the directory where assemblies are located, use the `newdoc` script to create a new file:
++
+[subs=+quotes]
+----
+_assemblies-dir_]$ newdoc --assembly "_Achieving thing_"
+----
++
+You can use the short form of the option instead: `newdoc -a "_Achieving thing_"`.
+
+. Rewrite the information in the template with your docs.
++
+Add AsciiDoc include statements to include modules. See link:https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/#include-files[Include Files] in the AsciiDoc Syntax Quick Reference.
+
+
+== Additional resources
+
+* link:https://redhat-documentation.github.io/modular-docs/[Modular Documentation Reference Guide]
+* link:https://redhat-documentation.github.io/asciidoc-markup-conventions/[AsciiDoc Mark-up Quick Reference for Red Hat Documentation]
+
