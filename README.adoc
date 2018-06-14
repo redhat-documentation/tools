@@ -17,14 +17,14 @@ $ git clone git@gitlab.cee.redhat.com:ccs-tools/newdoc.git
 +
 [subs=+quotes]
 ----
-alias newdoc=_path-to-cloned-repo_/newdoc.py
+alias newdoc="_path-to-cloned-repo_/newdoc.py"
 ----
 +
 For example, if you are using the `bash` shell, you might add something like the following in your `~/.bashrc` file:
 +
 [subs=+quotes]
 ----
-alias newdoc=/home/marek/RH/newdoc/newdoc.py
+alias newdoc="/home/marek/RH/newdoc/newdoc.py"
 ----
 
 [id="new-module"]
