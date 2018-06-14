@@ -3,18 +3,37 @@
 [id="readme"]
 = README: The `newdoc` script
 
+[id="installation"]
+== How do I install the script?
+
+. Clone this repository somewhere on your system:
++
+[subs=+quotes]
+----
+$ git clone git@gitlab.cee.redhat.com:ccs-tools/newdoc.git
+----
+
+. In your shell configuration, add an alias to the `newdoc` script:
++
+[subs=+quotes]
+----
+alias newdoc=_path-to-cloned-repo_/newdoc.py
+----
++
+For example, if you are using the `bash` shell, you might add something like the following in your `~/.bashrc` file:
++
+[subs=+quotes]
+----
+alias newdoc=/home/marek/RH/newdoc/newdoc.py
+----
+
 [id="new-module"]
 == How do I add a new module?
 
 [discrete]
 === Prerequisites
 
-* In your shell configuration, add an alias to the `newdoc` script:
-+
-[subs=+quotes]
-----
-alias newdoc=_path-to-newdoc-repo_/newdoc.py
-----
+* Install the script. See xref:installation[] for details.
 
 [discrete]
 === Procedure
@@ -36,12 +55,7 @@ The script also accepts the `--concept` and `--reference` options. You can use t
 [discrete]
 === Prerequisites
 
-* In your shell configuration, add an alias to the `newdoc` script:
-+
-[subs=+quotes]
-----
-alias newdoc=_path-to-newdoc-repo_/newdoc.py
-----
+* Install the script. See xref:installation[] for details.
 
 [discrete]
 === Procedure
