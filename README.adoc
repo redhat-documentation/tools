@@ -6,6 +6,12 @@
 [id="installation"]
 == How do I install the script?
 
+. The script requires Python 3.5 or later to run. This is available on Fedora and most other community distributions. 
++
+If you are using RHEL or your system does not have Python 3 for another reason, install it. On RHEL, try using Software Collections: link:https://www.softwarecollections.org/en/scls/rhscl/rh-python36/[].
++
+More details to be added.
+
 . Clone this repository somewhere on your system:
 +
 [subs=+quotes]
