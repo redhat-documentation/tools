@@ -69,7 +69,7 @@ def convert_title_to_id(title: str, doc_type: str) -> str:
         "&": "",
         "*": "",
         ",": "",
-        ".": "",
+        ".": "-",
         "/": "-",
         ":": "-",
         ";": "",
