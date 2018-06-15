@@ -10,15 +10,15 @@
 // * ID: [id='ref_my-reference-a_{context}']
 // * Title: = My reference A
 //
-// The ID is used as an anchor for linking to the module. Avoid changing 
-// it after the module has been published to ensure existing links are not 
+// The ID is used as an anchor for linking to the module. Avoid changing
+// it after the module has been published to ensure existing links are not
 // broken.
 //
-// The `context` attribute enables module reuse. Every module's ID includes 
-// {context}, which ensures that the module has a unique ID even if it is 
+// The `context` attribute enables module reuse. Every module's ID includes
+// {context}, which ensures that the module has a unique ID even if it is
 // reused multiple times in a guide.
 //
-// In the title, include nouns that are used in the body text. This helps 
+// In the title, include nouns that are used in the body text. This helps
 // readers and search engines find information quickly.
 [id="MODULE-ID_{context}"]
 = MODULE TITLE
