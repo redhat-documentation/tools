@@ -1,0 +1,10 @@
+= Changelog of the `newdoc` script
+
+== v1.0, 2018-06-19
+
+Initial version. Features in this release:
+
+* Generates files from four hard-coded templates (assembly, concept, procedure, and reference) located in the `templates/` directory next to the script file itself.
+* Fills in the correct ID, title, context, and parent context. Names the resulting file accordingly.
+* Has the option to include comments in the generated file or delete them.
+
