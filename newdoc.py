@@ -126,9 +126,41 @@ def strip_comments(adoc_text: str) -> str:
     # Connect the lines again, deleting empty leading lines
     return "\n".join(no_comments).lstrip()
 
+def write_file(converted_id: str, module_content: str) -> None:
+    """
+    This function writes the generated content into the appropriate file,
+    performing necessary checks
+    """
+
+    # Prepare the name of the output file to be written
+    out_file = converted_id + ".adoc"
+
+    # Check if the file exists; abort if so
+    if os.path.exists(out_file):
+        print('File already exists: "{}"'.format(out_file))
+
+        # Ask the user how to proceed, loop after an unexpected answer
+        decision = None
+
+        while not decision:
+            response = input("Overwrite it? [yes/no] ").lower()
+
+            if response in ["yes", "y"]:
+                print("Overwriting.")
+                break
+            elif response in ["no", "n"]:
+                print("Preserving the older file.")
+                exit(1)
+            else:
+                pass
+
+    # Write the file
+    with open(out_file, "w") as f:
+        f.write(module_content)
+
 def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
     """
-    The main function that writes new files
+    The main function of the script that integrates the other functions
     """
     doc_type_templates = {
         "assembly": ASSEMBLY_TEMPLATE,
@@ -152,10 +184,8 @@ def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
     if delete_comments:
         module_content = strip_comments(module_content)
 
-    # Write the module
-    out_file = converted_id + ".adoc"
-    with open(out_file, "w") as f:
-        f.write(module_content)
+    # Write the generated content into a file
+    write_file(converted_id, module_content)
 
 
 if __name__ == "__main__":
