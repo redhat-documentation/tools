@@ -3,7 +3,7 @@
 // <List assemblies here, each on a new line>
 
 // This module can be included from assemblies using the following include statement:
-// include::modules/<subsystem>/MODULE-ID.adoc[leveloffset=+1]
+// include::<path>/MODULE-ID.adoc[leveloffset=+1]
 
 // The file name and the ID are based on the module title. For example:
 // * file name: con_my-concept-module-a.adoc

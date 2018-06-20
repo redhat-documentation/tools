@@ -158,6 +158,9 @@ def write_file(converted_id: str, module_content: str) -> None:
     with open(out_file, "w") as f:
         f.write(module_content)
 
+    print("To include this file from an assembly, use:")
+    print("include::<path>/{}[leveloffset=+1]".format(out_file))
+
 def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
     """
     The main function of the script that integrates the other functions
