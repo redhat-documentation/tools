@@ -6,11 +6,34 @@
 [id="installation"]
 == How do I install the script?
 
-. The script requires Python 3.5 or later to run. This is available on Fedora and most other community distributions. 
+[discrete]
+=== Prerequisites
+
+The script requires Python 3.5 or later to run. This is available on Fedora and most other community distributions by default.
+
+* If you are using RHEL 7, install Python 3:
 +
-If you are using RHEL or your system does not have Python 3 for another reason, install it. On RHEL, try using Software Collections: link:https://www.softwarecollections.org/en/scls/rhscl/rh-python36/[].
+--
+. Enable Software Collections:
 +
-More details to be added.
+----
+# subscription-manager repos --enable rhel-server-rhscl-7-rpms
+----
++
+For more information, see link:https://access.redhat.com/documentation/en-us/red_hat_software_collections/3/html/3.1_release_notes/chap-installation[].
+
+. Install the package containing Python 3:
++
+----
+# yum install rh-python36
+----
+--
+
+* If you use a different system that does not contain Python 3, install it in the appropriate way.
+
+
+[discrete]
+=== Procedure
 
 . Clone this repository somewhere on your system:
 +
@@ -19,7 +42,9 @@ More details to be added.
 $ git clone git@gitlab.cee.redhat.com:ccs-tools/newdoc.git
 ----
 
-. In your shell configuration, add an alias to the `newdoc` script:
+. In your shell configuration, add an alias to the `newdoc` script.
++
+** If you are using Fedora or a community Linux distribution:
 +
 [subs=+quotes]
 ----
@@ -30,14 +55,40 @@ For example, if you are using the `bash` shell, you might add something like the
 +
 [subs=+quotes]
 ----
-alias newdoc="__/home/marek/RH/newdoc/__newdoc.py"
+alias newdoc="__/home/msuchane/RH/newdoc/__newdoc.py"
 ----
-+
-If you prefer `newdoc` to generate file without the explanatory comments, change the alias to include the `--no-comments` option:
+
+** If you are using RHEL 7:
 +
 [subs=+quotes]
 ----
-alias newdoc="__/home/marek/RH/newdoc/__newdoc.py --no-comments"
+function newdoc() {
+scl enable rh-python36 "_path-to-cloned-repo_/newdoc.py $@"
+}
+----
++
+Or, alternatively:
++
+[subs=+quotes]
+----
+alias newdoc="/opt/rh/rh-python36/root/usr/bin/python _path-to-cloned-repo_/newdoc.py"
+----
++
+For example, if you are using the `bash` shell, you might add something like the following in your `~/.bashrc` file:
++
+[subs=+quotes]
+----
+function newdoc() {
+scl enable rh-python36 "__/home/msuchane/RH/newdoc/__newdoc.py $@"
+}
+----
+
+
+If you prefer `newdoc` to generate file without the explanatory comments, change the alias to include the `--no-comments` option:
+
+[subs=+quotes]
+----
+alias newdoc="__/home/msuchane/RH/newdoc/__newdoc.py *--no-comments*"
 ----
 
 [id="new-module"]
