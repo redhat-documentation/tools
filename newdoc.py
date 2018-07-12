@@ -1,7 +1,19 @@
 #!/usr/bin/env python3
 
-import argparse
+from __future__ import print_function, unicode_literals
+import sys
 import os
+import io
+import argparse
+
+# Record whether we're runnign under Python 2 or 3
+PYVERSION = sys.version_info.major
+
+# Force Python 2 to use the UTF-8 encoding. Otherwise, loading a template
+# containing Unicode characters fails.
+if PYVERSION == 2:
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 # The directory where the script is located
 SCRIPT_HOME_DIR = os.path.dirname(__file__)
@@ -48,7 +60,8 @@ parser.add_argument("-C", "--no-comments",
 #                     type=str)
 
 
-def convert_title_to_id(title: str, doc_type: str) -> str:
+# def convert_title_to_id(title: str, doc_type: str) -> str:
+def convert_title_to_id(title, doc_type):
     """
     Converts the human-readable title to an ID string.
     """
@@ -83,10 +96,18 @@ def convert_title_to_id(title: str, doc_type: str) -> str:
         "{": "",
         "}": ""
     }
-    trans_table = str.maketrans(subst_map)
 
-    # Perform the substitutions specified by the above dict/table
-    converted_id = converted_id.translate(trans_table)
+    # Python 2 needs special treatment
+    if PYVERSION == 2:
+        for k in subst_map.keys():
+            v = subst_map[k]
+            converted_id = converted_id.replace(k, v)
+    # Python 3 can use the `translate` function
+    else:
+        trans_table = str.maketrans(subst_map)
+
+        # Perform the substitutions specified by the above dict/table
+        converted_id = converted_id.translate(trans_table)
 
     # Add the doc type prefix:
     prefixes = {
@@ -99,7 +120,8 @@ def convert_title_to_id(title: str, doc_type: str) -> str:
 
     return converted_id
 
-def translate_template(template: str, title: str, converted_id: str) -> str:
+# def translate_template(template: str, title: str, converted_id: str) -> str:
+def translate_template(template, title, converted_id):
     """
     Replaces placeholders in the template with the actual strings.
     """
@@ -112,7 +134,8 @@ def translate_template(template: str, title: str, converted_id: str) -> str:
     return template
 
 
-def strip_comments(adoc_text: str) -> str:
+# def strip_comments(adoc_text: str) -> str:
+def strip_comments(adoc_text):
     """
     This function accepts AsciiDoc source and returns a copy of it
     that is stripped of all line starting with "//".
@@ -126,7 +149,8 @@ def strip_comments(adoc_text: str) -> str:
     # Connect the lines again, deleting empty leading lines
     return "\n".join(no_comments).lstrip()
 
-def write_file(converted_id: str, module_content: str) -> None:
+# def write_file(converted_id: str, module_content: str) -> None:
+def write_file(converted_id, module_content):
     """
     This function writes the generated content into the appropriate file,
     performing necessary checks
@@ -134,6 +158,12 @@ def write_file(converted_id: str, module_content: str) -> None:
 
     # Prepare the name of the output file to be written
     out_file = converted_id + ".adoc"
+
+    # In Python 2, the `input` function is called `raw_input`
+    if PYVERSION == 2:
+        compatible_input = raw_input
+    else:
+        compatible_input = input
 
     # Check if the file exists; abort if so
     if os.path.exists(out_file):
@@ -143,7 +173,7 @@ def write_file(converted_id: str, module_content: str) -> None:
         decision = None
 
         while not decision:
-            response = input("Overwrite it? [yes/no] ").lower()
+            response = compatible_input("Overwrite it? [yes/no] ").lower()
 
             if response in ["yes", "y"]:
                 print("Overwriting.")
@@ -157,12 +187,20 @@ def write_file(converted_id: str, module_content: str) -> None:
     # Write the file
     with open(out_file, "w") as f:
         f.write(module_content)
+    # In Python 2, the UTF-8 encoding has to be specified explicitly
+    if PYVERSION == 2:
+        with io.open(out_file, mode="w", encoding="utf-8") as f:
+            f.write(module_content)
+    else:
+        with open(out_file, "w") as f:
+            f.write(module_content)
 
     print("File successfully generated.")
     print("To include this file from an assembly, use:")
     print("include::<path>/{}[leveloffset=+1]".format(out_file))
 
-def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
+# def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
+def create_module(title, doc_type, delete_comments):
     """
     The main function of the script that integrates the other functions
     """
@@ -178,8 +216,14 @@ def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
 
     # Read the content of the template
     template_file = os.path.join(TEMPLATES_DIR, doc_type_templates[doc_type])
-    with open(template_file, "r") as f:
-        template = f.read()
+
+    # In Python 2, the UTF-8 encoding has to be specified explicitly
+    if PYVERSION == 2:
+        with io.open(template_file, mode="r", encoding="utf-8") as f:
+            template = f.read()
+    else:
+        with open(template_file, "r") as f:
+            template = f.read()
 
     # Prepare the content of the new module
     module_content = translate_template(template, title, converted_id)
