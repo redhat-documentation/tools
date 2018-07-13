@@ -8,10 +8,12 @@ New features:
 ** ID capitalization,
 ** Word separators in the ID,
 ** Custom template files.
+* Built-in Python templating is used for substitutions in templates. Thanks to this, writing custom templates is more predictable and better documented.
 
 Bug fixes:
 
 * The bundled assembly template no longer includes a non-existent file, and can be compiled with no errors
+* The generated IDs no longer start with the module prefix like file names.
 
 == v1.1, 2018-07-13
 
