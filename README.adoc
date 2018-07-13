@@ -50,6 +50,20 @@ For example, if you are using the `bash` shell, you might add something like the
 alias newdoc="python2 __/home/msuchane/RH/newdoc/__newdoc.py"
 ----
 
+** If you are using macOS:
++
+[subs=+quotes]
+----
+alias newdoc="python**2** __/Users/msuchane/RH/newdoc/__newdoc.py"
+----
++
+For example, if you are using the `bash` shell, you might add something like the following in your `~/.bashrc` file:
++
+[subs=+quotes]
+----
+alias newdoc="python2 __/Users/msuchane/RH/newdoc/__newdoc.py"
+----
+
 
 If you prefer `newdoc` to generate file without the explanatory comments, change the alias to include the `--no-comments` option:
 
