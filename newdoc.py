@@ -5,6 +5,7 @@ import sys
 import os
 import io
 import argparse
+from string import Template
 
 # Record whether we're runnign under Python 2 or 3
 PYVERSION = sys.version_info.major
@@ -192,29 +193,7 @@ def convert_title_to_id(title, doc_type):
         # Perform the substitutions specified by the above dict/table
         converted_id = converted_id.translate(trans_table)
 
-    # Add the doc type prefix:
-    prefixes = {
-        "assembly": "assembly",
-        "concept": "con",
-        "procedure": "proc",
-        "reference": "ref"
-    }
-    converted_id = prefixes[doc_type] + "_" + converted_id
-
     return converted_id
-
-# def translate_template(template: str, title: str, converted_id: str) -> str:
-def translate_template(template, title, converted_id):
-    """
-    Replaces placeholders in the template with the actual strings.
-    """
-
-    template = template.replace("ASSEMBLY-ID", converted_id)
-    template = template.replace("MODULE-ID", converted_id)
-    template = template.replace("ASSEMBLY TITLE", title)
-    template = template.replace("MODULE TITLE", title)
-
-    return template
 
 
 # def strip_comments(adoc_text: str) -> str:
@@ -233,14 +212,11 @@ def strip_comments(adoc_text):
     return "\n".join(no_comments).lstrip()
 
 # def write_file(converted_id: str, module_content: str) -> None:
-def write_file(converted_id, module_content):
+def write_file(out_file, module_content):
     """
     This function writes the generated content into the appropriate file,
     performing necessary checks
     """
-
-    # Prepare the name of the output file to be written
-    out_file = converted_id + ".adoc"
 
     # In Python 2, the `input` function is called `raw_input`
     if PYVERSION == 2:
@@ -282,6 +258,7 @@ def write_file(converted_id, module_content):
     print("To include this file from an assembly, use:")
     print("include::<path>/{}[leveloffset=+1]".format(out_file))
 
+
 # def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
 def create_module(title, doc_type, delete_comments):
     """
@@ -290,6 +267,15 @@ def create_module(title, doc_type, delete_comments):
 
     # Convert the title to ID
     converted_id = convert_title_to_id(title, doc_type)
+
+    # Derive a file name from the ID and the doc type
+    prefixes = {
+        "assembly": "assembly_",
+        "concept": "con_",
+        "procedure": "proc_",
+        "reference": "ref_"
+    }
+    filename = prefixes[doc_type] + converted_id + ".adoc"
 
     # Read the content of the template
     template_file = os.path.expanduser(options[doc_type + "_template"])
@@ -308,14 +294,16 @@ def create_module(title, doc_type, delete_comments):
             template = f.read()
 
     # Prepare the content of the new module
-    module_content = translate_template(template, title, converted_id)
+    module_content = Template(template).substitute(module_title=title,
+                                                   module_id=converted_id,
+                                                   filename=filename)
 
     # If the --no-comments option is selected, delete all comments
     if delete_comments:
         module_content = strip_comments(module_content)
 
     # Write the generated content into a file
-    write_file(converted_id, module_content)
+    write_file(filename, module_content)
 
 
 if __name__ == "__main__":

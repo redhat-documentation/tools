@@ -3,7 +3,7 @@
 // <List assemblies here, each on a new line>
 
 // This module can be included from assemblies using the following include statement:
-// include::<path>/MODULE-ID.adoc[leveloffset=+1]
+// include::<path>/${filename}[leveloffset=+1]
 
 // The file name and the ID are based on the module title. For example:
 // * file name: proc_doing-procedure-a.adoc
@@ -20,8 +20,8 @@
 //
 // Start the title with a verb, such as Creating or Create. See also
 // _Wording of headings_ in _The IBM Style Guide_.
-[id="MODULE-ID_{context}"]
-= MODULE TITLE
+[id="${module_id}_{context}"]
+= ${module_title}
 
 This paragraph is the procedure module introduction: a short description of the procedure.
 
