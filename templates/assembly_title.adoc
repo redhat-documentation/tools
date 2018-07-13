@@ -69,7 +69,8 @@ This paragraph is the assembly introduction. It explains what the user will acco
 // modules required to cover the user story. You can also include other
 // assemblies.
 
-include::modules/subsystem/proc_doing_one_procedure.adoc[leveloffset=+1]
+// include::modules/subsystem/proc_doing_one_procedure.adoc[leveloffset=+1]
+
 // [leveloffset=+1] ensures that when a module starts with a level-1 heading
 // (= Heading), the heading will be interpreted as a level-2 heading
 // (== Heading) in the assembly.
