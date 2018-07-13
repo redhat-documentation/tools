@@ -27,19 +27,15 @@ SCRIPT_HOME_DIR = os.path.dirname(__file__)
 # The directory where templates are located, relative to this script
 TEMPLATES_DIR = os.path.join(SCRIPT_HOME_DIR, "templates")
 
-# The names of template files for different doc types
-ASSEMBLY_TEMPLATE = "assembly_title.adoc"
-CONCEPT_TEMPLATE = "con_title.adoc"
-PROCEDURE_TEMPLATE = "proc_title.adoc"
-REFERENCE_TEMPLATE = "ref_title.adoc"
-
 DEFAULT_OPTIONS = {
     "id_case": "lowercase",
     "word_separator": "-",
-    "assembly_template": ASSEMBLY_TEMPLATE,
-    "concept_template": CONCEPT_TEMPLATE,
-    "procedure_template": PROCEDURE_TEMPLATE,
-    "reference_template": REFERENCE_TEMPLATE,
+    # The names of template files for different doc types
+    "assembly_template": os.path.join(TEMPLATES_DIR, "assembly_title.adoc"),
+    "concept_template": os.path.join(TEMPLATES_DIR, "con_title.adoc"),
+    "procedure_template": os.path.join(TEMPLATES_DIR, "proc_title.adoc"),
+    "reference_template": os.path.join(TEMPLATES_DIR, "ref_title.adoc"),
+    # Templates can be downloaded from a repository
     "online_templates": False
 }
 
@@ -291,18 +287,17 @@ def create_module(title, doc_type, delete_comments):
     """
     The main function of the script that integrates the other functions
     """
-    doc_type_templates = {
-        "assembly": ASSEMBLY_TEMPLATE,
-        "concept": CONCEPT_TEMPLATE,
-        "procedure": PROCEDURE_TEMPLATE,
-        "reference": REFERENCE_TEMPLATE
-    }
 
     # Convert the title to ID
     converted_id = convert_title_to_id(title, doc_type)
 
     # Read the content of the template
-    template_file = os.path.join(TEMPLATES_DIR, doc_type_templates[doc_type])
+    template_file = os.path.expanduser(options[doc_type + "_template"])
+
+    # Make sure the template file exists
+    if not os.path.isfile(template_file):
+        print("Error: Template file not found: '{}'".format(template_file))
+        exit(1)
 
     # In Python 2, the UTF-8 encoding has to be specified explicitly
     if PYVERSION == 2:
