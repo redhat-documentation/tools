@@ -1,5 +1,12 @@
 = Changelog of the `newdoc` script
 
+== v1.1, 2018-07-13
+
+New features:
+
+* `newdoc` is now compatible with Python 2.7, and as such can be run on RHEL 7 or macOS with no additional setup steps.
+* The script prints out an (example) include statement after generating a file. This can be used to copy and paste the include into an assembly.
+
 == v1.0, 2018-06-19
 
 Initial version. Features in this release:
