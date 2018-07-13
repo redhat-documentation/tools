@@ -64,12 +64,20 @@ For example, if you are using the `bash` shell, you might add something like the
 alias newdoc="python2 __/Users/msuchane/RH/newdoc/__newdoc.py"
 ----
 
+[discrete]
+=== Notes
 
-If you prefer `newdoc` to generate file without the explanatory comments, change the alias to include the `--no-comments` option:
-
+* If you prefer `newdoc` to generate file without the explanatory comments, change the alias to include the `--no-comments` option:
++
 [subs=+quotes]
 ----
 alias newdoc="_python3_ __/home/msuchane/RH/newdoc/__newdoc.py *--no-comments*"
+----
+
+* In order for the alias to take effect in your current shell session as well, reload the configuration file. For example, with `bash`:
++
+----
+$ source ~/.bashrc
 ----
 
 [id="new-module"]
