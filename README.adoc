@@ -119,6 +119,64 @@ You can use the short form of the option instead: `newdoc -a "_Achieving thing_"
 Add AsciiDoc include statements to include modules. See link:https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/#include-files[Include Files] in the AsciiDoc Syntax Quick Reference.
 
 
+[id="configuration"]
+== Configuration
+
+`newdoc` enables you to configure multiple aspects of its behavior:
+
+* Custom templates for assemblies and modules,
+* How IDs are capitalized when converted from a title,
+* What symbol is used to replace spaces in IDs.
+
+These options can be set in the `newdoc.ini` configuration file, which is located:
+
+* On Fedora, RHEL, and other Linux distributions, in `~/.config/newdoc/newdoc.ini`
+* On macOS, in `~/Library/Preferences/newdoc/newdoc.ini`
+
+The configuration file is not created automatically: if you want to set custom options, create it using a plain text editor.
+
+
+[discrete]
+=== Custom templates
+
+In the config file, you can set paths to custom AsciiDoc template files for each module type. The options are:
+
+* `assembly_template`
+* `concept_template`
+* `procedure_template`
+* `reference_template`
+
+For example, to use a custom template for reference modules, use:
+
+[subs=+quotes]
+----
+reference_template = _~/.config/newdoc/my-reference-template.adoc_
+----
+
+`newdoc` performs substitutions on the templates using the Python `string.template` library. The following strings are replaced:
+
+* `${module_title}` with the entered title of the module
+* `${module_id}` with the generated ID of the module
+* `${filename}` with the generated file name of the module
+
+For more details on the template syntax, see: link:https://docs.python.org/3/library/string.html#template-strings[]
+
+
+[discrete]
+=== ID substitutions
+
+* The `id_case` option in the config file controls how the letter case should change from the title to the ID:
++
+`id_case = lowercase`:: All letters in the ID will be lower-case
+`id_case = capitalize`:: The first letter will be upper-case, the rest lower-case
+`id_case = preserve`:: Keep the capitalization as entered in the title
+
+* The `word_separator` option lets you choose the symbol (or string) used to replace spaces in the ID. The default is a dash:
++
+----
+word_separator = -
+----
+
 == Additional resources
 
 * link:https://redhat-documentation.github.io/modular-docs/[Modular Documentation Reference Guide]
