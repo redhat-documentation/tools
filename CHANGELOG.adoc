@@ -4,7 +4,10 @@
 
 New features:
 
-* You can now configure ID capitalization and word separators in the `~/.config/newdoc/newdoc.ini` config file.
+* The script now recognizes the `~/.config/newdoc/newdoc.ini` config file (different on macOS). You can use it to set:
+** ID capitalization,
+** Word separators in the ID,
+** Custom template files.
 
 Bug fixes:
 
