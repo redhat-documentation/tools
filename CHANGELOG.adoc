@@ -1,6 +1,12 @@
 = Changelog of the `newdoc` script
 
-== v1.2, <add date>
+== v1.2, WIP
+
+New features:
+
+* You can now configure ID capitalization and word separators in the `~/.config/newdoc/newdoc.ini` config file.
+
+Bug fixes:
 
 * The bundled assembly template no longer includes a non-existent file, and can be compiled with no errors
 

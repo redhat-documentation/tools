@@ -9,6 +9,12 @@ import argparse
 # Record whether we're runnign under Python 2 or 3
 PYVERSION = sys.version_info.major
 
+# The configparser module is called ConfigParser in Python2
+if PYVERSION == 2:
+    import ConfigParser as cp
+else:
+    import configparser as cp
+
 # Force Python 2 to use the UTF-8 encoding. Otherwise, loading a template
 # containing Unicode characters fails.
 if PYVERSION == 2:
@@ -26,6 +32,16 @@ ASSEMBLY_TEMPLATE = "assembly_title.adoc"
 CONCEPT_TEMPLATE = "con_title.adoc"
 PROCEDURE_TEMPLATE = "proc_title.adoc"
 REFERENCE_TEMPLATE = "ref_title.adoc"
+
+DEFAULT_OPTIONS = {
+    "id_case": "lowercase",
+    "word_separator": "-",
+    "assembly_template": ASSEMBLY_TEMPLATE,
+    "concept_template": CONCEPT_TEMPLATE,
+    "procedure_template": PROCEDURE_TEMPLATE,
+    "reference_template": REFERENCE_TEMPLATE,
+    "online_templates": False
+}
 
 # Build a command-line options parser
 parser = argparse.ArgumentParser()
@@ -59,18 +75,89 @@ parser.add_argument("-C", "--no-comments",
 #                     help="Specify the directory where to save modules.",
 #                     type=str)
 
+# def get_config_dir() -> str:
+def get_config_dir():
+    """
+    Finds the appropriate user configuration directory where newdoc can store
+    its configuration.
+    Extracted form the appdirs library: https://github.com/ActiveState/appdirs
+    """
+    # Typical user config directories are:
+    #   Mac OS X:  ~/Library/Preferences/<AppName>
+    #   Unix:      ~/.config/<AppName>     # or in $XDG_CONFIG_HOME, if defined
+    #   Win *:     same as user_data_dir
+    platform = sys.platform
+
+    if platform == "linux":
+        os_config_dir = os.getenv("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    elif platform == "darwin":
+        os_config_dir = os.path.expanduser("~/Library/Preferences/")
+    elif platform == "win32":
+        print("newdoc has not been tested on Windows, and the configuration "
+              "file functionality is not available here.")
+        os_config_dir = None
+    else:
+        os_config_dir = os.path.expanduser("~/.config")
+
+    return os.path.join(os_config_dir, "newdoc")
+
+# def get_config() -> dict:
+def get_config():
+    """
+    Tries to find config options in the platform-specific user config file,
+    otherwise falls back to defaults.
+    """
+    config_dir = get_config_dir()
+    config_file = os.path.join(config_dir, "newdoc.ini")
+
+    # Copy default options to start with:
+    options = DEFAULT_OPTIONS
+
+    # Search for matching keys in the config file; if found,
+    # update the options dict with them
+    if os.path.isfile(config_file):
+        config = cp.ConfigParser()
+        try:
+            config.read(config_file)
+        except cp.MissingSectionHeaderError:
+            print("Error: The [newdoc] section is required in the configuration file.")
+            exit(1)
+
+        for k in options.keys():
+            # The configparser library is different in Python 2 and 3.
+            # This si the only 2/3-compatible way I've found for optional keys.
+            try:
+                options[k] = config.get("newdoc", k)
+            except cp.NoOptionError:
+                pass
+
+    return options
+
 
 # def convert_title_to_id(title: str, doc_type: str) -> str:
 def convert_title_to_id(title, doc_type):
     """
     Converts the human-readable title to an ID string.
     """
-    # Convert to lowercase:
-    converted_id = title.lower()
+
+    # Some substitution rules, such as capitalization and word separator,
+    # are found in the `options` dict inherited from the calling scope
+    if options["id_case"] in ["lowercase", "lower-case", "lower case"]:
+        # Convert to lowercase:
+        converted_id = title.lower()
+    elif options["id_case"] in ["capitalize", "capitalise"]:
+        # First letter capitalized, subsequent letters lower-case:
+        converted_id = title.capitalize()
+    elif options["id_case"] in ["preserve", "original"]:
+        converted_id = title
+    else:
+        print("Error: ID capitalization option not recognized: '{}'".format(
+            options["id_case"]))
+        exit(1)
 
     # This dict specifies all char substitutions to make on the ID
     subst_map = {
-        " ": "-",
+        " ": options["word_separator"],
         "(": "",
         ")": "",
         "?": "",
@@ -239,6 +326,7 @@ def create_module(title, doc_type, delete_comments):
 if __name__ == "__main__":
     # Get commandline arguments
     args = parser.parse_args()
+    options = get_config()
     
     # Transform the args object into something that can be easily iterated
     args_struct = [
