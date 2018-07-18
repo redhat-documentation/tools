@@ -7,7 +7,7 @@ import io
 import argparse
 from string import Template
 
-# Record whether we're runnign under Python 2 or 3
+# Record whether we're running under Python 2 or 3
 PYVERSION = sys.version_info.major
 
 # The configparser module is called ConfigParser in Python2
