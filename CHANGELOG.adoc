@@ -1,5 +1,11 @@
 = Changelog of the `newdoc` script
 
+== WIP
+
+Bug fixes:
+
+* The generated ID will no longer contain double dashes (`--`). These were breaking references to the ID.
+
 == v1.2, 2018-07-13
 
 New features:
