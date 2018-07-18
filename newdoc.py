@@ -193,6 +193,11 @@ def convert_title_to_id(title, doc_type):
         # Perform the substitutions specified by the above dict/table
         converted_id = converted_id.translate(trans_table)
 
+    # Make sure the converted ID doesn't contain double dashes ("--"), because
+    # that breaks references to the ID
+    while "--" in converted_id:
+        converted_id = converted_id.replace("--", "-")
+
     return converted_id
 
 
