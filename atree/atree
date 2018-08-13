@@ -1,0 +1,149 @@
+#!/usr/bin/python
+# Vladimir Slavik, Red Hat, 2018
+
+from __future__ import print_function
+import sys
+import re
+from os.path import dirname, basename, isfile, isdir
+from os.path import join as pjoin
+from os import getcwd, chdir
+from glob import glob
+
+include_finder = re.compile(r"(\/\/)?.*include\:\:([^\[]+)\[") # specific enough, but does not include the parameters
+comment_finder = re.compile(r"(\/{4,})")
+ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
+
+do_debug = False
+
+def dp(*var) :
+  if do_debug :
+    print(*var)
+
+stack = []
+
+class AFile :
+  
+  def __init__(self, fname, parent_path="") :
+    dp("AFile.__init__", fname, parent_path)
+    self.fname = fname
+    self.parent_path = parent_path
+    self.includes = []
+    self.commented = False
+    self.conditions = []
+    
+  def resolve(self) :
+    dp("resolve()")
+    this_path = dirname(self.fname)
+    try :
+      if self.parent_path :
+        f = open(self.parent_path + "/" + self.fname, "r")
+        dp("open() ", self.parent_path + "/" + self.fname)
+      else :
+        f = open(self.fname, "r")
+        dp("open() ", self.fname)
+      lines = f.readlines()
+      f.close()
+      dp("read ok")
+      for line in lines :
+        # see if there is include on this line
+        include_found = include_finder.findall(line)
+        for include in include_found :
+          dp("include::", include[1])
+          new_file = AFile(include[1], pjoin(self.parent_path, this_path))
+          new_file.commented = new_file.commented or (include[0] == "//") or (stack and stack[-1].startswith("//")) or self.commented
+          # this ^^^ is about determining status of the found include
+          new_file.conditions = [i for i in stack]
+          self.includes.append(new_file)
+        # this vvv is about determining if a multiline comment starts or ends here (instead)
+        comment_found = comment_finder.findall(line)
+        for comment in comment_found :
+          if stack and stack[-1] == comment :
+            stack.pop()
+          else :
+            stack.append(comment)
+        # see if there is a preprocessor condition
+        ifdef_found = ifdef_finder.findall(line)
+        for ifdef in ifdef_found :
+          if ifdef[0] != "//" : # is the condition not-commented out?
+            if ifdef[1].startswith("endif") :
+              stack.pop() # assumes there are no condition crossovers
+            else :
+              stack.append(ifdef[1])
+          # else: silently drop commented-out conditions
+    except Exception as e :
+      dp("Exception caught for resolve()")
+      dp("self.fname ", self.fname)
+      dp("self.parent_path", self.parent_path)
+      dp("curdir ", getcwd())
+      dp("error ", e)
+    for subfile in self.includes :
+      subfile.resolve()
+  
+  def print_tree(self, level=0) :
+    if self.commented :
+      print(" "*2*level + "// " + self.fname)
+    else :
+      print(" "*2*level + self.fname)
+    cond = ""
+    for s in self.conditions :
+      if not s.startswith("//") :
+        cond += " " + s
+    if cond :
+      print(" "*2*(level+1) + "\\- !!! "+ cond)
+    for subfile in self.includes :
+      subfile.print_tree(level+1)
+
+
+def guess_file() :
+  # see if there is master.adoc, index.adoc, or a single .adoc file, in that order, and return that file or empty string
+  if isfile("master.adoc") :
+    return "master.adoc"
+  elif isfile("index.adoc") :
+    return "index.adoc"
+  else :
+    adocs = glob("*.adoc")
+    if len(adocs) == 1 :
+      return adocs[0]
+  return ""
+
+# MAIN
+
+# pick the file where to start
+the_file = ""
+the_dir = ""
+if len(sys.argv) >= 2 :
+  # called with parameter, which must be further processed
+  the_file = basename(sys.argv[1])
+  the_dir = dirname(sys.argv[1])
+else :
+  # must guess the file
+  the_file = guess_file()
+  if not the_file :
+    # could not guess, let's fail
+    print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
+    exit(1)
+
+dp(the_dir, "//", the_file)
+# now handle when a directory is given instead of a file (must always guess then)
+if the_dir and not the_file :
+  # if parameter is given like some/dir/ with shell autocomplete
+  chdir(the_dir)
+  the_file = guess_file()
+  if not the_file :
+    print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
+    exit(1)
+elif isdir(the_file) :
+  # if parameter is given manually as some/dir
+  chdir(pjoin(the_dir,the_file))
+  the_file = guess_file()
+  if not the_file :
+    print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
+    exit(1)
+elif the_dir :
+  chdir(the_dir)
+
+top = AFile(the_file)
+top.resolve()
+top.print_tree()
+
+# EOF
