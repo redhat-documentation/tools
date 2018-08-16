@@ -14,6 +14,7 @@ comment_finder = re.compile(r"(\/{4,})")
 ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
 
 do_debug = False
+indent_level = 4
 
 def dp(*var) :
   if do_debug :
@@ -81,15 +82,15 @@ class AFile :
   
   def print_tree(self, level=0) :
     if self.commented :
-      print(" "*2*level + "// " + self.fname)
+      print(" "*indent_level*level + "// " + self.fname)
     else :
-      print(" "*2*level + self.fname)
+      print(" "*indent_level*level + self.fname)
     cond = ""
     for s in self.conditions :
       if not s.startswith("//") :
         cond += " " + s
     if cond :
-      print(" "*2*(level+1) + "\\- !!! "+ cond)
+      print(" "*indent_level*(level+1) + "\\- !!! "+ cond)
     for subfile in self.includes :
       subfile.print_tree(level+1)
 
