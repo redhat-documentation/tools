@@ -16,7 +16,7 @@ ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]
 do_debug = False
 indent_level = 4
 
-def dp(*var) :
+def debug_print(*var) :
   if do_debug :
     print(*var)
 
@@ -25,7 +25,7 @@ stack = []
 class AFile :
   
   def __init__(self, fname, parent_path="") :
-    dp("AFile.__init__", fname, parent_path)
+    debug_print("AFile.__init__", fname, parent_path)
     self.fname = fname
     self.parent_path = parent_path
     self.includes = []
@@ -33,23 +33,23 @@ class AFile :
     self.conditions = []
     
   def resolve(self) :
-    dp("resolve()")
+    debug_print("resolve()")
     this_path = dirname(self.fname)
     try :
       if self.parent_path :
         f = open(self.parent_path + "/" + self.fname, "r")
-        dp("open() ", self.parent_path + "/" + self.fname)
+        debug_print("open() ", self.parent_path + "/" + self.fname)
       else :
         f = open(self.fname, "r")
-        dp("open() ", self.fname)
+        debug_print("open() ", self.fname)
       lines = f.readlines()
       f.close()
-      dp("read ok")
+      debug_print("read ok")
       for line in lines :
         # see if there is include on this line
         include_found = include_finder.findall(line)
         for include in include_found :
-          dp("include::", include[1])
+          debug_print("include::", include[1])
           new_file = AFile(include[1], pjoin(self.parent_path, this_path))
           new_file.commented = new_file.commented or (include[0] == "//") or (stack and stack[-1].startswith("//")) or self.commented
           # this ^^^ is about determining status of the found include
@@ -72,11 +72,11 @@ class AFile :
               stack.append(ifdef[1])
           # else: silently drop commented-out conditions
     except Exception as e :
-      dp("Exception caught for resolve()")
-      dp("self.fname ", self.fname)
-      dp("self.parent_path", self.parent_path)
-      dp("curdir ", getcwd())
-      dp("error ", e)
+      debug_print("Exception caught for resolve()")
+      debug_print("self.fname ", self.fname)
+      debug_print("self.parent_path", self.parent_path)
+      debug_print("curdir ", getcwd())
+      debug_print("error ", e)
     for subfile in self.includes :
       subfile.resolve()
   
@@ -124,7 +124,7 @@ else :
     print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
     exit(1)
 
-dp(the_dir, "//", the_file)
+debug_print(the_dir, "//", the_file)
 # now handle when a directory is given instead of a file (must always guess then)
 if the_dir and not the_file :
   # if parameter is given like some/dir/ with shell autocomplete
