@@ -14,6 +14,11 @@ setuptools.setup(
     long_description_content_type="text/asciidoc",
     url="https://github.com/mrksu/tools/tree/master/newdoc",
     packages=setuptools.find_packages(),
+    entry_points={
+        'console_scripts': [
+            'newdoc = newdoc:main',
+        ],
+    },
     classifiers=[
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",

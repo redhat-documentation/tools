@@ -311,7 +311,10 @@ def create_module(title, doc_type, delete_comments):
     write_file(filename, module_content)
 
 
-if __name__ == "__main__":
+def main():
+    """
+    Main, executable procedure of the script
+    """
     # Get commandline arguments
     args = parser.parse_args()
     options = get_config()
@@ -336,4 +339,7 @@ if __name__ == "__main__":
             # Doc type options accept multiple titles to create multiple files
             for title in title_list:
                 create_module(title, doc_type, args.no_comments)
+
+if __name__ == "__main__":
+    main()
 
