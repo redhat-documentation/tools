@@ -18,7 +18,7 @@ $ pip --user install newdoc
 1. In the directory where modules are located, use the `newdoc` script to create a new file:
 
     ```
-    _modules-dir_]$ newdoc _--procedure_ "_Setting up thing_"
+    modules-dir]$ newdoc --procedure "Setting up thing"
     ```
 
     The script also accepts the `--concept` and `--reference` options. You can use these short forms instead: `-p`, `-c`, and `-r`.
@@ -30,10 +30,10 @@ $ pip --user install newdoc
 1. In the directory where assemblies are located, use the `newdoc` script to create a new file:
 
     ```
-    _assemblies-dir_]$ newdoc --assembly "_Achieving thing_"
+    assemblies-dir]$ newdoc --assembly "Achieving thing"
     ```
     
-    You can use the short form of the option instead: `newdoc -a "_Achieving thing_"`.
+    You can use the short form of the option instead: `newdoc -a "Achieving thing"`.
 
 2. Rewrite the information in the template with your docs.
 
@@ -70,7 +70,7 @@ In the config file, you can set paths to custom AsciiDoc template files for each
 For example, to use a custom template for reference modules, use:
 
 ```
-reference_template = _~/.config/newdoc/my-reference-template.adoc_
+reference_template = ~/.config/newdoc/my-reference-template.adoc
 ```
 
 `newdoc` performs substitutions on the templates using the Python `string.template` library. The following strings are replaced:
