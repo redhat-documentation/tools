@@ -17,11 +17,11 @@ $ pip --user install newdoc
 
 1. In the directory where modules are located, use the `newdoc` script to create a new file:
 
-```
-_modules-dir_]$ newdoc _--procedure_ "_Setting up thing_"
-```
+    ```
+    _modules-dir_]$ newdoc _--procedure_ "_Setting up thing_"
+    ```
 
-The script also accepts the `--concept` and `--reference` options. You can use these short forms instead: `-p`, `-c`, and `-r`.
+    The script also accepts the `--concept` and `--reference` options. You can use these short forms instead: `-p`, `-c`, and `-r`.
 
 2. Rewrite the information in the template with your docs.
 
@@ -29,15 +29,15 @@ The script also accepts the `--concept` and `--reference` options. You can use t
 
 1. In the directory where assemblies are located, use the `newdoc` script to create a new file:
 
-```
-_assemblies-dir_]$ newdoc --assembly "_Achieving thing_"
-```
-
-You can use the short form of the option instead: `newdoc -a "_Achieving thing_"`.
+    ```
+    _assemblies-dir_]$ newdoc --assembly "_Achieving thing_"
+    ```
+    
+    You can use the short form of the option instead: `newdoc -a "_Achieving thing_"`.
 
 2. Rewrite the information in the template with your docs.
 
-Add AsciiDoc include statements to include modules. See [Include Files](https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/#include-files) in the AsciiDoc Syntax Quick Reference.
+    Add AsciiDoc include statements to include modules. See [Include Files](https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/#include-files) in the AsciiDoc Syntax Quick Reference.
 
 
 ## Configuration
@@ -79,22 +79,22 @@ reference_template = _~/.config/newdoc/my-reference-template.adoc_
 * `${module_id}` with the generated ID of the module
 * `${filename}` with the generated file name of the module
 
-For more details on the template syntax, see: link:https://docs.python.org/3/library/string.html#template-strings[]
+For more details on the template syntax, see: <https://docs.python.org/3/library/string.html#template-strings>
 
 
 ### ID substitutions
 
 * The `id_case` option in the config file controls how the letter case should change from the title to the ID:
 
-`id_case = lowercase`:: All letters in the ID will be lower-case
-`id_case = capitalize`:: The first letter will be upper-case, the rest lower-case
-`id_case = preserve`:: Keep the capitalization as entered in the title
+    * `id_case = lowercase`: All letters in the ID will be lower-case
+    * `id_case = capitalize`: The first letter will be upper-case, the rest lower-case
+    * `id_case = preserve`: Keep the capitalization as entered in the title
 
 * The `word_separator` option lets you choose the symbol (or string) used to replace spaces in the ID. The default is a dash:
 
-```
-word_separator = -
-```
+    ```
+    word_separator = -
+    ```
 
 ## Notes
 
