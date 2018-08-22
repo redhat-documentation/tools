@@ -6,7 +6,8 @@ with open("README.adoc", "r") as fh:
 
 setuptools.setup(
     name="newdoc",
-    version="1.2",
+    version="1.2.1",
+    license="GPLv3+",
     author="Marek Suchánek",
     author_email="marek.suchanek@protonmail.com",
     description="A script to generate assembly and module AsciiDoc files from templates.",
