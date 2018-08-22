@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="newdoc",
-    version="1.2.2",
+    version="1.2.3",
     license="GPLv3+",
     author="Marek Suchánek",
     author_email="marek.suchanek@protonmail.com",
@@ -17,7 +17,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'newdoc = newdoc:main',
+            'newdoc = newdoc.newdoc:main',
         ],
     },
     classifiers=[
