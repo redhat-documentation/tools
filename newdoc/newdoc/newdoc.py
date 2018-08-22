@@ -40,38 +40,6 @@ DEFAULT_OPTIONS = {
     "online_templates": False
 }
 
-# Build a command-line options parser
-parser = argparse.ArgumentParser()
-
-parser.add_argument("-a", "--assembly",
-                    help="Create an assembly from a given title.",
-                    metavar="title",
-                    nargs="+",
-                    type=str)
-parser.add_argument("-c", "--concept",
-                    help="Create a concept module from a given title.",
-                    metavar="title",
-                    nargs="+",
-                    type=str)
-parser.add_argument("-p", "--procedure",
-                    help="Create a procedure module from a given title.",
-                    metavar="title",
-                    nargs="+",
-                    type=str)
-parser.add_argument("-r", "--reference",
-                    help="Create a reference module from a given title.",
-                    metavar="title",
-                    nargs="+",
-                    type=str)
-parser.add_argument("-C", "--no-comments",
-                    help="Generate the file without any comments.",
-                    action="store_true")
-
-# Doesn't do anything right now
-# parser.add_argument("-d", "--module-dir",
-#                     help="Specify the directory where to save modules.",
-#                     type=str)
-
 # def get_config_dir() -> str:
 def get_config_dir():
     """
@@ -132,7 +100,7 @@ def get_config():
 
 
 # def convert_title_to_id(title: str, doc_type: str) -> str:
-def convert_title_to_id(title, doc_type):
+def convert_title_to_id(title, doc_type, options):
     """
     Converts the human-readable title to an ID string.
     """
@@ -265,13 +233,13 @@ def write_file(out_file, module_content):
 
 
 # def create_module(title: str, doc_type: str, delete_comments: bool) -> None:
-def create_module(title, doc_type, delete_comments):
+def create_module(title, doc_type, options, delete_comments):
     """
     The main function of the script that integrates the other functions
     """
 
     # Convert the title to ID
-    converted_id = convert_title_to_id(title, doc_type)
+    converted_id = convert_title_to_id(title, doc_type, options)
 
     # Derive a file name from the ID and the doc type
     prefixes = {
@@ -315,6 +283,39 @@ def main():
     """
     Main, executable procedure of the script
     """
+    # Build a command-line options parser
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-a", "--assembly",
+                        help="Create an assembly from a given title.",
+                        metavar="title",
+                        nargs="+",
+                        type=str)
+    parser.add_argument("-c", "--concept",
+                        help="Create a concept module from a given title.",
+                        metavar="title",
+                        nargs="+",
+                        type=str)
+    parser.add_argument("-p", "--procedure",
+                        help="Create a procedure module from a given title.",
+                        metavar="title",
+                        nargs="+",
+                        type=str)
+    parser.add_argument("-r", "--reference",
+                        help="Create a reference module from a given title.",
+                        metavar="title",
+                        nargs="+",
+                        type=str)
+    parser.add_argument("-C", "--no-comments",
+                        help="Generate the file without any comments.",
+                        action="store_true")
+
+    # Doesn't do anything right now
+    # parser.add_argument("-d", "--module-dir",
+    #                     help="Specify the directory where to save modules.",
+    #                     type=str)
+
+
     # Get commandline arguments
     args = parser.parse_args()
     options = get_config()
@@ -338,7 +339,7 @@ def main():
         for doc_type, title_list in valid_args:
             # Doc type options accept multiple titles to create multiple files
             for title in title_list:
-                create_module(title, doc_type, args.no_comments)
+                create_module(title, doc_type, options, args.no_comments)
 
 if __name__ == "__main__":
     main()
