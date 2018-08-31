@@ -2,7 +2,7 @@
 
 Name:           python-%{srcname}
 Version:        1.3.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
 License:        GPLv3+
