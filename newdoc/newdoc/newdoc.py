@@ -7,7 +7,7 @@ import io
 import argparse
 from string import Template
 
-NEWDOC_VERSION = "1.3.1"
+NEWDOC_VERSION = "1.3.2"
 
 # Record whether we're running under Python 2 or 3
 PYVERSION = sys.version_info.major
