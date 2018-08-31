@@ -58,7 +58,7 @@ A script to generate assembly and module AsciiDoc files from templates
 %{python2_sitelib}/*
 
 %files -n python3-%{srcname}
-%license COPYING
+%license LICENSE
 %doc README.md
 %{python3_sitelib}/*
 %{_bindir}/newdoc
