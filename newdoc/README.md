@@ -17,7 +17,7 @@ It hasn't been tested on Windows.
     # pip3 install newdoc
     ```
 
-* On RHEL 7, CentOS 7, or macOS use the `pip` package manager, version 2:
+* On RHEL 7, CentOS 7, or macOS, use the `pip` package manager, version 2:
 
     ```
     # pip install newdoc
