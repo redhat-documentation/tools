@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -eu
+
+URL=$1
+BRANCH=$2
+DIR=$3
+
+mkdir -p $DIR
+
+DIR=$(readlink -f $DIR)
+TMP=$(mktemp -d)
+
+(
+    cd $TMP
+
+    git clone --bare --branch "$BRANCH" "$URL" .
+    git archive "$BRANCH" | tar -xf - -C "$DIR"
+    git rev-parse HEAD > "${DIR}.revision"
+)
+
+rm -rf $TMP
