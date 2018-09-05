@@ -1,16 +1,27 @@
 # README: The `newdoc` script
 
-## How do I install the script?
+This script is used for generating empty module and assembly files when writing Red Hat or Fedora documentation in AsciiDoc. The generated files follow template guidelines set up by the Modular Documentation initiative: <https://redhat-documentation.github.io/modular-docs/>.
 
 The script is now compatible with both Python 3 (for Fedora and community distributions) and Python 2.7 (for RHEL 7 and macOS).
 
 It hasn't been tested on Windows.
 
-To install `newdoc`, use the `pip` package manager:
 
-```
-$ pip --user install newdoc
-```
+## How do I install the script?
+
+* To install `newdoc` on Fedora, use the Copr package repository: <https://copr.fedorainfracloud.org/coprs/mareksu/newdoc/>. See the instructions there.
+
+* On a Linux distribution that includes Python 3, use the `pip` package manager, version 3:
+
+    ```
+    # pip3 install newdoc
+    ```
+
+* On RHEL 7, CentOS 7, or macOS, use the `pip` package manager, version 2:
+
+    ```
+    # pip install newdoc
+    ```
 
 
 ## How do I add a new module?
