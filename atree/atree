@@ -97,6 +97,7 @@ class AFile :
 
 def guess_file() :
   # see if there is master.adoc, index.adoc, or a single .adoc file, in that order, and return that file or empty string
+  debug_print("guess_file()")
   if isfile("master.adoc") :
     return "master.adoc"
   elif isfile("index.adoc") :
@@ -107,44 +108,71 @@ def guess_file() :
       return adocs[0]
   return ""
 
+
+def analyze_path(knownfile) :
+	# takes a path that is a known existing file under current situation
+	top = AFile(knownfile)
+	top.resolve()
+	top.print_tree()
+
+
+def process_path(somepath) :
+	debug_print("process_path()")
+	the_file = basename(somepath)
+	the_dir = dirname(somepath)
+	debug_print(somepath, "//", the_dir, "//", the_file)
+	# now handle when a directory is given instead of a file (must always guess then)
+	if the_dir and not the_file :
+		# if parameter is given like some/dir/ with trailing slash (eg. shell autocomplete)
+		chdir(the_dir)
+		the_file = guess_file()
+		if not the_file :
+			print("Could not guess an AsciiDoc file in directory %s" % (the_dir))
+		else :
+			analyze_path(the_file)
+	elif isdir(the_file) :
+		# if parameter is given as some/dir without trailing slash (eg. manually)
+		target = pjoin(the_dir,the_file)
+		chdir(target)
+		the_file = guess_file()
+		if not the_file :
+			print("Could not guess an AsciiDoc file in directory %s" % (target))
+			exit(1)
+		analyze_path(the_file)
+	elif the_dir :
+		# if parameter is given as some/dir/file.adoc and has a dir component
+		chdir(the_dir)
+		analyze_path(the_file)
+	else :
+		# if it's given as file.adoc with no directory
+		analyze_path(the_file)
+
+
+
 # MAIN
-
-# pick the file where to start
-the_file = ""
-the_dir = ""
-if len(sys.argv) >= 2 :
-  # called with parameter, which must be further processed
-  the_file = basename(sys.argv[1])
-  the_dir = dirname(sys.argv[1])
+curdir = getcwd()
+debug_print(sys.argv)
+if len(sys.argv) < 2 :
+	# called with no params, must guess the file
+	the_file = guess_file()
+	if not the_file :
+		# could not guess, let's fail
+		print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
+		exit(1)
+	else :
+		# found a default file
+		process_path(the_file)
 else :
-  # must guess the file
-  the_file = guess_file()
-  if not the_file :
-    # could not guess, let's fail
-    print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
-    exit(1)
-
-debug_print(the_dir, "//", the_file)
-# now handle when a directory is given instead of a file (must always guess then)
-if the_dir and not the_file :
-  # if parameter is given like some/dir/ with shell autocomplete
-  chdir(the_dir)
-  the_file = guess_file()
-  if not the_file :
-    print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
-    exit(1)
-elif isdir(the_file) :
-  # if parameter is given manually as some/dir
-  chdir(pjoin(the_dir,the_file))
-  the_file = guess_file()
-  if not the_file :
-    print("No AsciiDoc file specified and no file found that you obviously wanted to be automagically guessed.")
-    exit(1)
-elif the_dir :
-  chdir(the_dir)
-
-top = AFile(the_file)
-top.resolve()
-top.print_tree()
+	# called with exact params specifying files or dirs
+	items = sys.argv[1:]
+	debug_print(items)
+	nitems = len(items)
+	for i in range(nitems) :
+		item = items[i]
+		print("Listing %s:" % (item))
+		chdir(curdir)
+		process_path(item)
+		if i < nitems-1 :
+			print() # empty line
 
 # EOF
