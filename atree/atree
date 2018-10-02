@@ -163,12 +163,17 @@ if len(sys.argv) < 2 :
 		# found a default file
 		process_path(the_file)
 else :
-	# called with exact params specifying files or dirs
+	# called with exact params specifying globs for files or dirs 
 	items = sys.argv[1:]
 	debug_print(items)
-	nitems = len(items)
+	finds = []
+	for item in items :
+		found = glob(item)
+		finds += found
+	debug_print(finds)
+	nitems = len(finds)
 	for i in range(nitems) :
-		item = items[i]
+		item = finds[i]
 		print("Listing %s:" % (item))
 		chdir(curdir)
 		process_path(item)
