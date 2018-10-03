@@ -1,10 +1,13 @@
 atree - print a tree of asciidoc document inclusions
 
-syntax: atree file|directory
+syntax: atree file|directory [file|directory]...
 
 Prints a tree of asciidoc document inclusions.
 
-First parameter is the top level file, or a directory with the file.
+INPUT
+-----
+
+The only possible parameter is the top level file, or a directory with the file, or a glob pattern for these. You can add this parameter multiple times.
 
 
 OUTPUT
@@ -50,15 +53,15 @@ KNOWN ISSUES
 
 * If an attribute is used in the include macro, the attribute is not uderstood and thus also not expanded. The include is displayed, but the actual file can not be loaded and thus any further inclusions are not shown.
 
-* Listing multiple files or directories is not supported.
-
-* 
+* All includes in comments are listed, including these that are not intended as part of the document, but only comment.
 
 
 HINTS
 -----
 
 * If there is only a single AsciiDoc file in the directory, atree will assume that's the one you want analyzed, even if you do not specify it.
+
+* You can specify the input with glob patterns, including directory traversal /**/. This lets you construct very powerful queries.
 
 * You can use egrep to add search and highlighting:
   atree | egrep --color "SOME-FILE-I-WANT-HIGHLIGHTED|$"
