@@ -25,7 +25,7 @@
 //
 // If the assembly covers a task, start the title with a verb in the gerund
 // form, such as Creating or Configuring.
-[id='${module_id}_{context}']
+[id="${module_id}_{context}"]
 = ${module_title}
 
 // The `context` attribute enables module reuse. Every module's ID
