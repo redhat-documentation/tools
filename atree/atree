@@ -4,7 +4,7 @@
 from __future__ import print_function
 import sys
 import re
-from os.path import dirname, basename, isfile, isdir, join, abspath
+from os.path import dirname, basename, isfile, isdir, join, abspath, exists
 from os import getcwd, chdir
 from glob import glob
 
@@ -33,6 +33,7 @@ class AFile :
     self.commented = False # this is in a comment
     self.recursive = False # this is a known infinite recursion
     self.invalid = False # this as an invalid path
+    self.nonexistent = False # this path does not exist
     self.includes = []
     self.conditions = []
     
@@ -47,10 +48,16 @@ class AFile :
     if self.invalid :
       debug_print("skipping: this is an invalid file name")
       return
+    if self.nonexistent :
+      debug_print("skipping: this is a nonexistent file name")
+      return
     this_path = dirname(self.fname)
     try :
       if self.parent_path :
         fn = join(self.parent_path, self.fname)
+        if not exists(fn) :
+          self.nonexistent = True
+          raise IOError("File does not exist, skipping.")
         f = open(fn, "r")
         debug_print("open() ", fn)
       else :
@@ -76,6 +83,7 @@ class AFile :
           if any((c in invalid_chars) for c in include[1]) :
             debug_print("marking as invalid due to weird characters in path")
             new_file.invalid = True
+          # exists/nonexistent can not work here because the true file name incl. dir must be constructed, but would be here otherwise
           # all this ^^^ is about determining status of the found include
           new_file.conditions = [i for i in stack]
           self.includes.append(new_file)
@@ -118,6 +126,8 @@ class AFile :
       warns += "R!"
     if self.invalid :
       warns += "X!"
+    if self.nonexistent :
+      warns += "N!"
     if warns :
       warns += " " # terminating space to make it readable
     if not (not display_commented and self.commented) :
