@@ -25,7 +25,7 @@
 //
 // If the assembly covers a task, start the title with a verb in the gerund
 // form, such as Creating or Configuring.
-[id='${module_id}_{context}']
+[id="${module_id}_{context}"]
 = ${module_title}
 
 // The `context` attribute enables module reuse. Every module's ID
@@ -57,7 +57,7 @@ endif::[]
 
 This paragraph is the assembly introduction. It explains what the user will accomplish by working through the modules in the assembly and sets the context for the user story the assembly is based on. Can include more than one paragraph. Consider using the information from the user story.
 
-[id='prerequisites-{context}']
+[id="prerequisites-{context}"]
 == Prerequisites
 
 * A bulleted list of conditions that must be satisfied before the user starts following this assembly.
@@ -77,7 +77,7 @@ Include modules here.
 // (= Heading), the heading will be interpreted as a level-2 heading
 // (== Heading) in the assembly.
 
-[id='related-information-{context}']
+[id="related-information-{context}"]
 == Related information
 
 * A bulleted list of links to other material closely related to the contents of the concept module.
