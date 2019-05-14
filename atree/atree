@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Vladimir Slavik, Red Hat, 2018
+# Vladimir Slavik, Red Hat, 2018, 2019
 
 from __future__ import print_function
 import sys
@@ -15,14 +15,17 @@ ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]
 do_debug = False
 indent_level = 4
 invalid_chars = set("<>|*:")
+option_strings = ["-a", "-b", "-l"]
+
+stack = []
+output_mode = "-a" # values: -a annotated (default), -b absolute, -l literal
+
+display_commented = False
+analyze_commented = False
 
 def debug_print(*var) :
   if do_debug :
     print(*var)
-
-stack = []
-display_commented = False
-analyze_commented = False
 
 class AFile :
   
@@ -30,6 +33,7 @@ class AFile :
     debug_print("AFile.__init__", fname, parent_path)
     self.fname = fname
     self.parent_path = parent_path
+    self.abs_fname = ""
     self.commented = False # this is in a comment
     self.recursive = False # this is a known infinite recursion
     self.invalid = False # this as an invalid path
@@ -54,15 +58,17 @@ class AFile :
     this_path = dirname(self.fname)
     try :
       if self.parent_path :
-        fn = join(self.parent_path, self.fname)
-        if not exists(fn) :
+        abs_fn = abspath(join(self.parent_path, self.fname))
+        if not exists(abs_fn) :
           self.nonexistent = True
           raise IOError("File does not exist, skipping.")
-        f = open(fn, "r")
-        debug_print("open() ", fn)
+        self.abs_fname = abs_fn
+        f = open(abs_fn, "r")
+        debug_print("open() ", abs_fn)
       else :
         f = open(self.fname, "r")
         debug_print("open() ", self.fname)
+        self.abs_fname = abspath(self.fname)
       lines = f.readlines()
       f.close()
       debug_print("read ok")
@@ -118,27 +124,37 @@ class AFile :
       subfile.resolve()
   
   def print_tree(self, level=0) :
-    # first store any mods to the file listing
-    warns = ""
-    if self.commented :
-      warns += "//"
-    if self.recursive :
-      warns += "R!"
-    if self.invalid :
-      warns += "X!"
-    if self.nonexistent :
-      warns += "N!"
-    if warns :
-      warns += " " # terminating space to make it readable
-    if not (not display_commented and self.commented) :
-      # show in all cases except when comments are off and it's comment
-      print(" "*indent_level*level + warns + self.fname)
-    cond = ""
-    for s in self.conditions :
-      if not s.startswith("//") :
-        cond += " " + s
-    if cond :
-      print(" "*indent_level*(level+1) + "\\- !!! "+ cond)
+    debug_print(output_mode)
+    if output_mode == "-a" :
+      # annotated mode (default)
+      # first store any mods to the file listing
+      warns = ""
+      if self.commented :
+        warns += "//"
+      if self.recursive :
+        warns += "R!"
+      if self.invalid :
+        warns += "X!"
+      if self.nonexistent :
+        warns += "N!"
+      if warns :
+        warns += " " # terminating space to make it readable
+      if not (not display_commented and self.commented) :
+        # show in all cases except when comments are off and it's comment
+        print(" "*indent_level*level + warns + self.fname)
+      cond = ""
+      for s in self.conditions :
+        if not s.startswith("//") :
+          cond += " " + s
+      if cond :
+        print(" "*indent_level*(level+1) + "\\- !!! "+ cond)
+    elif output_mode == "-b" :
+      # absolute mode - print absolute paths
+      if not (not display_commented and self.commented) :
+        # show in all cases except when comments are off and it's comment
+        print(self.abs_fname)
+    else :
+      debug_print("unknown print mode encountered!")
     # invalid, recursive etc. must not have any includes stored so safe to call it with no check
     for subfile in self.includes :
       subfile.print_tree(level+1)
@@ -197,11 +213,43 @@ def process_path(somepath) :
     analyze_path(the_file)
 
 
+def handle_option(the_option) :
+  global output_mode
+  output_mode = the_option
+  print("Setting print mode: " + output_mode + "\n")
+  # no other options yet = simple handling
+
 
 # MAIN
 curdir = getcwd()
 debug_print(sys.argv)
-if len(sys.argv) < 2 :
+action_stack = [] #
+nitems = 0 # amount of actionable paths
+# first, pass over all arguments and expand globs
+if len(sys.argv) > 1 :
+  items = sys.argv[1:]
+  debug_print(items)
+  for item in items :
+    if item in option_strings :
+      action_stack += [item]
+    else :
+      found = glob(item)
+      action_stack += found
+      nitems += len(found)
+  debug_print(action_stack)
+# by now action_stack has actions or glob-expanded items, so act on each of these sequentially
+  for i in range(len(action_stack)) :
+    item = action_stack[i]
+    if item in option_strings :
+      handle_option(item)
+    else :
+      print("Listing %s:" % (item))
+      chdir(curdir)
+      process_path(item)
+      if i < nitems-1 :
+        print() # empty line after last item
+# it is possible there are only options or nothing at all, so check if any paths were printed and if none, try the current one
+if nitems < 1 :
   # called with no params, must guess the file
   the_file = guess_file()
   if not the_file :
@@ -211,22 +259,5 @@ if len(sys.argv) < 2 :
   else :
     # found a default file
     process_path(the_file)
-else :
-  # called with exact params specifying globs for files or dirs 
-  items = sys.argv[1:]
-  debug_print(items)
-  finds = []
-  for item in items :
-    found = glob(item)
-    finds += found
-  debug_print(finds)
-  nitems = len(finds)
-  for i in range(nitems) :
-    item = finds[i]
-    print("Listing %s:" % (item))
-    chdir(curdir)
-    process_path(item)
-    if i < nitems-1 :
-      print() # empty line
 
 # EOF
