@@ -15,10 +15,12 @@ ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]
 do_debug = False
 indent_level = 4
 invalid_chars = set("<>|*:")
-option_strings = ["-a", "-b", "-l"]
+mode_option_strings = ["-a", "-b", "-l"] # values: -a annotated (default), -b absolute, -l literal
+other_option_strings = ["-c", "-C", "-x", "-X"] # values: -c/-C display (+not) commented, -x/-X analyze (+not) commented
+option_strings = mode_option_strings + other_option_strings
 
 stack = []
-output_mode = "-a" # values: -a annotated (default), -b absolute, -l literal
+output_mode = "-a"
 
 display_commented = False
 analyze_commented = False
@@ -156,7 +158,9 @@ class AFile :
         print(self.abs_fname)
     elif output_mode == "-l" :
       # literal mode - print the include lines
-      print(self.include_line.rstrip())
+      if not (not display_commented and self.commented) :
+        # show in all cases except when comments are off and it's comment
+        print(self.include_line.rstrip())
     else :
       debug_print("unknown print mode encountered!")
     # invalid, recursive etc. must not have any includes stored so safe to call it with no check
@@ -219,9 +223,22 @@ def process_path(somepath) :
 
 def handle_option(the_option) :
   global output_mode
-  output_mode = the_option
-  print("Setting print mode: " + output_mode + "\n")
-  # no other options yet = simple handling
+  global display_commented
+  debug_print("handle_option()")
+  debug_print(the_option)
+  if the_option in mode_option_strings :
+    output_mode = the_option
+  elif the_option in other_option_strings :
+    if the_option == "-c" :
+      display_commented = True
+    if the_option == "-C" :
+      display_commented = False
+    if the_option == "-x" :
+      analyze_commented = True
+    if the_option == "-X" :
+      analyze_commented = False
+  else :
+    debug_print("unknown option encountered!")
 
 
 # MAIN
