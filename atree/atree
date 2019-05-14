@@ -29,11 +29,12 @@ def debug_print(*var) :
 
 class AFile :
   
-  def __init__(self, fname, parent_path="") :
-    debug_print("AFile.__init__", fname, parent_path)
+  def __init__(self, fname, parent_path="", include_line="") :
+    debug_print("AFile.__init__", fname, parent_path, include_line)
     self.fname = fname
     self.parent_path = parent_path
     self.abs_fname = ""
+    self.include_line = include_line
     self.commented = False # this is in a comment
     self.recursive = False # this is a known infinite recursion
     self.invalid = False # this as an invalid path
@@ -81,7 +82,7 @@ class AFile :
           debug_print("include::", include[1])
           include_real_dir = abspath(join(self.parent_path, this_path))
           debug_print("real dir", include_real_dir)
-          new_file = AFile(include[1], include_real_dir)
+          new_file = AFile(include[1], parent_path=include_real_dir, include_line=line)
           new_file.commented = new_file.commented or (include[0] == "//") or (stack and stack[-1].startswith("//")) or self.commented
           if (include_real_dir == self.parent_path) and (basename(include[1]) == self.fname) :
             debug_print("marking as self-recursive due to apparent identity with parent file")
@@ -153,6 +154,9 @@ class AFile :
       if not (not display_commented and self.commented) :
         # show in all cases except when comments are off and it's comment
         print(self.abs_fname)
+    elif output_mode == "-l" :
+      # literal mode - print the include lines
+      print(self.include_line.rstrip())
     else :
       debug_print("unknown print mode encountered!")
     # invalid, recursive etc. must not have any includes stored so safe to call it with no check
@@ -176,7 +180,7 @@ def guess_file() :
 
 def analyze_path(knownfile) :
   # takes a path that is a known existing file under current situation
-  top = AFile(knownfile)
+  top = AFile(knownfile, include_line="<top: %s>" % (knownfile))
   top.resolve()
   top.print_tree()
 
