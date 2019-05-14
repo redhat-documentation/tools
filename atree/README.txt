@@ -1,13 +1,35 @@
 atree - print a tree of asciidoc document inclusions
 
-syntax: atree file|directory [file|directory]...
+syntax: atree [file|directory|option]...
 
 Prints a tree of asciidoc document inclusions.
 
 INPUT
 -----
 
-The only possible parameter is the top level file, or a directory with the file, or a glob pattern for these. You can add this parameter multiple times.
+The possible parameters are:
+
+* Top level file
+* Directory with the top level file
+* Glob pattern for files or directories
+* Option
+
+You can specify as many inputs as needed. Inputs are processed in order of appearance. This means that options must be specified before the files they are supposed to affect.
+
+If no input files or directories are specified, the current directory is tried.
+
+
+OPTIONS
+-------
+
+-a  Use annotated output (default).
+-b  Use full path output.
+-l  Use literal include line output.
+
+-c  Display commented-out includes.
+-C  Do not display commented-out includes (default).
+-x  Analyze commented-out includes.
+-X  Do not analyze commented-out includes (default).
 
 
 OUTPUT
@@ -38,7 +60,7 @@ EXAMPLE
 
    $ cd quick-docs/modules/ROOT/pages
 
-3. Show tree of some of the files: 
+3. Show tree of some of the files:
 
    $ atree securing-the-system-by-keeping-it-up-to-date.adoc
    securing-the-system-by-keeping-it-up-to-date.adoc
@@ -59,10 +81,10 @@ KNOWN ISSUES
 HINTS
 -----
 
-* If there is only a single AsciiDoc file in the directory, atree will assume that's the one you want analyzed, even if you do not specify it.
+* If there is only a single AsciiDoc file in the directory, atree will assume that is the one you want analyzed, even if you do not specify it.
 
 * You can specify the input with glob patterns, including directory traversal /**/. This lets you construct very powerful queries.
 
-* You can use egrep to add search and highlighting:
+* You can pipe atree output to egrep to add search and highlighting:
   atree | egrep --color "SOME-FILE-I-WANT-HIGHLIGHTED|$"
 
