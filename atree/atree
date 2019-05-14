@@ -4,7 +4,7 @@
 from __future__ import print_function
 import sys
 import re
-from os.path import dirname, basename, isfile, isdir, join, abspath, exists
+from os.path import dirname, basename, isfile, isdir, join, abspath, exists, realpath
 from os import getcwd, chdir
 from glob import glob
 
@@ -15,8 +15,11 @@ ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]
 do_debug = False
 indent_level = 4
 invalid_chars = set("<>|*:")
-mode_option_strings = ["-a", "-b", "-l"] # values: -a annotated (default), -b absolute, -l literal
-other_option_strings = ["-c", "-C", "-x", "-X"] # values: -c/-C display (+not) commented, -x/-X analyze (+not) commented
+mode_option_strings = ["-a", "-b", "-l"]
+# values: -a annotated (default), -b absolute, -l literal
+other_option_strings = ["-c", "-C", "-x", "-X", "-p", "-P"]
+# values: -c display commented, -x analyze commented, -p resolve symlinks for absolute paths
+# uppercase is inversion (default)
 option_strings = mode_option_strings + other_option_strings
 
 stack = []
@@ -24,6 +27,7 @@ output_mode = "-a"
 
 display_commented = False
 analyze_commented = False
+resolve_symlinks = False
 
 def debug_print(*var) :
   if do_debug :
@@ -155,7 +159,10 @@ class AFile :
       # absolute mode - print absolute paths
       if not (not display_commented and self.commented) :
         # show in all cases except when comments are off and it's comment
-        print(self.abs_fname)
+        if not resolve_symlinks :
+          print(self.abs_fname)
+        else :
+          print(realpath(self.abs_fname))
     elif output_mode == "-l" :
       # literal mode - print the include lines
       if not (not display_commented and self.commented) :
@@ -222,8 +229,7 @@ def process_path(somepath) :
 
 
 def handle_option(the_option) :
-  global output_mode
-  global display_commented
+  global output_mode, display_commented, analyze_commented, resolve_symlinks
   debug_print("handle_option()")
   debug_print(the_option)
   if the_option in mode_option_strings :
@@ -237,6 +243,10 @@ def handle_option(the_option) :
       analyze_commented = True
     if the_option == "-X" :
       analyze_commented = False
+    if the_option == "-p" :
+      resolve_symlinks = True
+    if the_option == "-P" :
+      resolve_symlinks = False
   else :
     debug_print("unknown option encountered!")
 

@@ -30,6 +30,8 @@ OPTIONS
 -C  Do not display commented-out includes (default).
 -x  Analyze commented-out includes.
 -X  Do not analyze commented-out includes (default).
+-p  Resolve symbolic links for absolute path output.
+-P  Do not resolve symbolic links for absolute path output (default).
 
 
 OUTPUT
