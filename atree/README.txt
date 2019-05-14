@@ -27,12 +27,11 @@ OPTIONS
 -l  Use literal include line output.
 
 -c  Display commented-out includes.
--C  Do not display commented-out includes (default).
 -x  Analyze commented-out includes.
--X  Do not analyze commented-out includes (default).
 -p  Resolve symbolic links for absolute path output.
--P  Do not resolve symbolic links for absolute path output (default).
+-h  Hide hints for human user.
 
+All options in the second group have their inverse in uppercase, which is also the default state. For example, atree does not show commented out includes by default, but you can get them with -c, and later return to the default with -C.
 
 OUTPUT
 ------

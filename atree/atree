@@ -17,8 +17,8 @@ indent_level = 4
 invalid_chars = set("<>|*:")
 mode_option_strings = ["-a", "-b", "-l"]
 # values: -a annotated (default), -b absolute, -l literal
-other_option_strings = ["-c", "-C", "-x", "-X", "-p", "-P"]
-# values: -c display commented, -x analyze commented, -p resolve symlinks for absolute paths
+other_option_strings = ["-c", "-C", "-x", "-X", "-p", "-P", "-h", "-H"]
+# values: -c display commented, -x analyze commented, -p resolve symlinks for absolute paths, -h hide verbose hints from output
 # uppercase is inversion (default)
 option_strings = mode_option_strings + other_option_strings
 
@@ -28,6 +28,7 @@ output_mode = "-a"
 display_commented = False
 analyze_commented = False
 resolve_symlinks = False
+hide_hints = True
 
 def debug_print(*var) :
   if do_debug :
@@ -229,7 +230,7 @@ def process_path(somepath) :
 
 
 def handle_option(the_option) :
-  global output_mode, display_commented, analyze_commented, resolve_symlinks
+  global output_mode, display_commented, analyze_commented, resolve_symlinks, hide_hints
   debug_print("handle_option()")
   debug_print(the_option)
   if the_option in mode_option_strings :
@@ -237,16 +238,20 @@ def handle_option(the_option) :
   elif the_option in other_option_strings :
     if the_option == "-c" :
       display_commented = True
-    if the_option == "-C" :
+    elif the_option == "-C" :
       display_commented = False
-    if the_option == "-x" :
+    elif the_option == "-x" :
       analyze_commented = True
-    if the_option == "-X" :
+    elif the_option == "-X" :
       analyze_commented = False
-    if the_option == "-p" :
+    elif the_option == "-p" :
       resolve_symlinks = True
-    if the_option == "-P" :
+    elif the_option == "-P" :
       resolve_symlinks = False
+    elif the_option == "-h" :
+      hide_hints = True
+    elif the_option == "-H" :
+      hide_hints = False
   else :
     debug_print("unknown option encountered!")
 
@@ -274,7 +279,8 @@ if len(sys.argv) > 1 :
     if item in option_strings :
       handle_option(item)
     else :
-      print("Listing %s:" % (item))
+      if not hide_hints :
+        print("Listing %s:" % (item))
       chdir(curdir)
       process_path(item)
       if i < nitems-1 :
@@ -285,7 +291,8 @@ if nitems < 1 :
   the_file = guess_file()
   if not the_file :
     # could not guess, let's fail
-    print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
+    if not hide_hints :
+      print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
     exit(1)
   else :
     # found a default file
