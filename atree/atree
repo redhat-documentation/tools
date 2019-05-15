@@ -11,6 +11,8 @@ from glob import glob
 include_finder = re.compile(r"(\/\/)?.*include\:\:([^\[]+)\[") # specific enough, but does not include the parameters
 comment_finder = re.compile(r"(\/{4,})")
 ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
+attrib_finder = re.compile(r"^[\s]*:(!)?([^:]+):(?:[\s]+(.+))?") # undef?,key,value
+inline_attr_finder = re.compile(r"\{[^}]+\}")
 
 do_debug = False
 indent_level = 4
@@ -23,12 +25,13 @@ other_option_strings = ["-c", "-C", "-x", "-X", "-p", "-P", "-h", "-H"]
 option_strings = mode_option_strings + other_option_strings
 
 stack = []
+attribs = {}
 output_mode = "-a"
 
 display_commented = False
 analyze_commented = False
 resolve_symlinks = False
-hide_hints = True
+hide_hints = False
 
 def debug_print(*var) :
   if do_debug :
@@ -87,20 +90,24 @@ class AFile :
         include_found = include_finder.findall(line)
         for include in include_found :
           debug_print("include::", include[1])
+          include_expanded = resolve_attribs(include[1])
           include_real_dir = abspath(join(self.parent_path, this_path))
           debug_print("real dir", include_real_dir)
-          new_file = AFile(include[1], parent_path=include_real_dir, include_line=line)
+          new_file = AFile(include_expanded, parent_path=include_real_dir, include_line=line)
           new_file.commented = new_file.commented or (include[0] == "//") or (stack and stack[-1].startswith("//")) or self.commented
-          if (include_real_dir == self.parent_path) and (basename(include[1]) == self.fname) :
+          if (include_real_dir == self.parent_path) and (basename(include_expanded) == self.fname) :
             debug_print("marking as self-recursive due to apparent identity with parent file")
             new_file.recursive = True
-          if any((c in invalid_chars) for c in include[1]) :
+          if any((c in invalid_chars) for c in include_expanded) :
             debug_print("marking as invalid due to weird characters in path")
             new_file.invalid = True
           # exists/nonexistent can not work here because the true file name incl. dir must be constructed, but would be here otherwise
           # all this ^^^ is about determining status of the found include
           new_file.conditions = [i for i in stack]
           self.includes.append(new_file)
+          debug_print("resolving the include")
+          new_file.resolve() # recurse immediately so that the state propagates same as in reality
+          debug_print("return to resolve()", self.parent_path, self.fname)
         # this vvv is about determining if a multiline comment starts or ends here (instead)
         comment_found = comment_finder.findall(line)
         for comment in comment_found :
@@ -121,15 +128,33 @@ class AFile :
           else:
             # silently drop commented-out conditions
             debug_print("dropped commented out " + ifdef[1])
-    except Exception as e :
+        # vvv act on attributes
+        attrib_found = attrib_finder.findall(line)
+        for attrib in attrib_found :
+          # attrib = [ "!", "name", "value"]
+          sname = sanitize_attrib(attrib[1])
+          if attrib[0] == "!" :
+            # remove the attribute
+            debug_print(":!attribute:", attrib, sname)
+            try :
+              del attribs[sname]
+            except KeyError :
+              pass
+          else :
+            # add it
+            debug_print(":attribute:", attrib, sname)
+            attribs[sname] = resolve_attribs(attrib[2])
+    except OSError :
       # expected to catch file exceptions
-      debug_print("Exception caught for resolve()")
+      debug_print("I/O exception caught for resolve()")
       debug_print("self.fname ", self.fname)
       debug_print("self.parent_path", self.parent_path)
       debug_print("curdir ", getcwd())
       debug_print("error ", e)
-    for subfile in self.includes :
-      subfile.resolve()
+    except Exception as e :
+      debug_print("Exception caught for resolve()")
+      debug_print("error ", e)
+      raise
   
   def print_tree(self, level=0) :
     debug_print(output_mode)
@@ -175,6 +200,32 @@ class AFile :
     for subfile in self.includes :
       subfile.print_tree(level+1)
 
+
+def sanitize_attrib(attr) :
+  return attr
+
+def resolve_attribs(in_text) :
+  temp = in_text
+  last_pos = 0
+  last_name = ""
+  while True:
+    start = temp.find("{", last_pos)
+    if start == -1 :
+      break # abort if no curly braces remain
+    end = temp.find("}", start)
+    name = temp[start:end+1] # incl. the curly braces!
+    if name == last_name :
+      last_pos = last_pos + 1 # same as last time, move on
+    try :
+      value = attribs[name[1:-1]] # exception should happen only here
+      len_diff = len(name) - len(value)
+      temp = temp.replace(name, resolve_attribs(value))
+      last_pos = start # + len_diff
+    except :
+      # could not expand that thing, move on...
+      last_pos = last_pos + 1
+    
+  return temp
 
 def guess_file() :
   # see if there is master.adoc, index.adoc, or a single .adoc file, in that order, and return that file or empty string
