@@ -10,7 +10,8 @@ from glob import glob
 
 include_finder = re.compile(r"(\/\/)?.*include\:\:([^\[]+)\[") # specific enough, but does not include the parameters
 comment_finder = re.compile(r"(\/{4,})")
-ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
+ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
+ifeval_finder = re.compile(r"(\/\/)?.*(ifeval::\[[^\]]+\])") # uses brackets so needs a different syntax
 attrib_finder = re.compile(r"^[\s]*:(!)?([^:]+):(?:[\s]+(.+))?") # undef?,key,value
 inline_attr_finder = re.compile(r"\{[^}]+\}")
 
@@ -120,6 +121,7 @@ class AFile :
         # vvv see if there is a preprocessor condition
         ifdef_found = ifdef_finder.findall(line)
         for ifdef in ifdef_found :
+          debug_print("ifdef:", ifdef)
           if ifdef[0] != "//" : # is the condition not-commented out?
             if ifdef[1].startswith("endif") :
               stack.pop() # assumes there are no condition crossovers
@@ -128,6 +130,14 @@ class AFile :
           else:
             # silently drop commented-out conditions
             debug_print("dropped commented out " + ifdef[1])
+        ifeval_found = ifeval_finder.findall(line)
+        for ifeval in ifeval_found :
+          debug_print("ifeval:", ifeval)
+          if ifeval[0] != "//" : # is the condition not-commented out?
+            stack.append(ifeval[1])
+          else:
+            # silently drop commented-out conditions
+            debug_print("dropped commented out " + ifeval[1])
         # vvv act on attributes
         attrib_found = attrib_finder.findall(line)
         for attrib in attrib_found :
