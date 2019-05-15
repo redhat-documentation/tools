@@ -154,7 +154,7 @@ class AFile :
             # add it
             debug_print(":attribute:", attrib, sname)
             attribs[sname] = resolve_attribs(attrib[2])
-    except OSError :
+    except (OSError,IOError) as e :
       # expected to catch file exceptions
       debug_print("I/O exception caught for resolve()")
       debug_print("self.fname ", self.fname)
