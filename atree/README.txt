@@ -26,8 +26,8 @@ OPTIONS
 -b  Use full path output.
 -l  Use literal include line output.
 
--c  Display commented-out includes.
--x  Analyze commented-out includes.
+-c  Display commented-out includes in annotated mode.
+-x  Analyze commented-out includes in annotated mode.
 -h  Hide hints for human user.
 
 All options in the second group have their inverse in uppercase, which is also the default state. For example, atree does not show commented out includes by default, but you can get them with -c, and later return to the default with -C.

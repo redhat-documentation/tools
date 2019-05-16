@@ -103,7 +103,8 @@ class AFile :
             new_file.invalid = True
           # exists/nonexistent can not work here because the true file name incl. dir must be constructed, but would be here otherwise
           # all this ^^^ is about determining status of the found include
-          new_file.conditions = [i for i in stack]
+          if len(stack) > 0 :
+            new_file.conditions = get_resolved_conditions()
           self.includes.append(new_file)
           debug_print("resolving the include")
           new_file.resolve() # recurse immediately so that the state propagates same as in reality
@@ -185,20 +186,20 @@ class AFile :
         # show in all cases except when comments are off and it's comment
         print(" "*indent_level*level + warns + self.fname)
       cond = ""
-      for s in self.conditions :
-        if not s.startswith("//") :
-          cond += " " + s
+      for c in self.conditions :
+        if not c[0].startswith("//") :
+          cond += " %s (%d)" % (c[0], int(c[1]))
       if cond :
         print(" "*indent_level*(level+1) + "\\- !!! "+ cond)
     elif output_mode == "-b" :
       # absolute mode - print absolute paths
-      if not (not display_commented and self.commented) :
-        # show in all cases except when comments are off and it's comment
+      if (not self.commented) and check_conditions(self.conditions) :
+        # show only if it is included
         print(realpath(self.abs_fname))
     elif output_mode == "-l" :
       # literal mode - print the include lines
-      if not (not display_commented and self.commented) :
-        # show in all cases except when comments are off and it's comment
+      if (not self.commented) and check_conditions(self.conditions) :
+        # show only if it is included
         print(self.include_line.rstrip())
     else :
       debug_print("unknown print mode encountered!")
@@ -210,6 +211,7 @@ class AFile :
 def sanitize_attrib(attr) :
   return attr
 
+
 def resolve_attribs(in_text) :
   temp = in_text
   last_pos = 0
@@ -217,7 +219,7 @@ def resolve_attribs(in_text) :
   while True:
     start = temp.find("{", last_pos)
     if start == -1 :
-      break # abort if no curly braces remain
+      break # abort if no curly brstackaces remain
     end = temp.find("}", start)
     name = temp[start:end+1] # incl. the curly braces!
     if name == last_name :
@@ -230,8 +232,34 @@ def resolve_attribs(in_text) :
     except :
       # could not expand that thing, move on...
       last_pos = last_pos + 1
-    
   return temp
+
+
+def get_resolved_conditions() :
+  global stack, attribs
+  debug_print("get_resolved_conditions()")
+  result = []
+  for cond in stack :
+    if cond.startswith("//") :
+      result.append((cond, False))
+      debug_print(" - comment")
+    elif cond.startswith("ifdef::") :
+      test_attr = cond.split("::",1)[1].split("[",1)[0]
+      check_result = test_attr in attribs
+      result.append((cond, check_result))
+      debug_print(" - ifdef", cond, check_result)
+    elif cond.startswith("ifndef::") :
+      test_attr = cond.split("::",1)[1].split("[",1)[0]
+      check_result = test_attr not in attribs
+      result.append((cond, check_result))
+      debug_print(" - ifndef", cond, check_result)
+  debug_print("get_resolved_conditions() end")
+  return result
+
+
+def check_conditions(conds) :
+  return all([c[1] for c in conds])
+
 
 def guess_file() :
   # see if there is master.adoc, index.adoc, or a single .adoc file, in that order, and return that file or empty string
