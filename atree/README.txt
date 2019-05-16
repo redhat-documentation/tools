@@ -28,7 +28,6 @@ OPTIONS
 
 -c  Display commented-out includes.
 -x  Analyze commented-out includes.
--p  Resolve symbolic links for absolute path output.
 -h  Hide hints for human user.
 
 All options in the second group have their inverse in uppercase, which is also the default state. For example, atree does not show commented out includes by default, but you can get them with -c, and later return to the default with -C.

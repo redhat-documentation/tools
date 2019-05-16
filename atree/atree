@@ -20,8 +20,8 @@ indent_level = 4
 invalid_chars = set("<>|*:")
 mode_option_strings = ["-a", "-b", "-l"]
 # values: -a annotated (default), -b absolute, -l literal
-other_option_strings = ["-c", "-C", "-x", "-X", "-p", "-P", "-h", "-H"]
-# values: -c display commented, -x analyze commented, -p resolve symlinks for absolute paths, -h hide verbose hints from output
+other_option_strings = ["-c", "-C", "-x", "-X", "-h", "-H"]
+# values: -c display commented, -x analyze commented, -h hide verbose hints from output
 # uppercase is inversion (default)
 option_strings = mode_option_strings + other_option_strings
 
@@ -31,7 +31,6 @@ output_mode = "-a"
 
 display_commented = False
 analyze_commented = False
-resolve_symlinks = False
 hide_hints = False
 
 def debug_print(*var) :
@@ -195,10 +194,7 @@ class AFile :
       # absolute mode - print absolute paths
       if not (not display_commented and self.commented) :
         # show in all cases except when comments are off and it's comment
-        if not resolve_symlinks :
-          print(self.abs_fname)
-        else :
-          print(realpath(self.abs_fname))
+        print(realpath(self.abs_fname))
     elif output_mode == "-l" :
       # literal mode - print the include lines
       if not (not display_commented and self.commented) :
@@ -291,7 +287,7 @@ def process_path(somepath) :
 
 
 def handle_option(the_option) :
-  global output_mode, display_commented, analyze_commented, resolve_symlinks, hide_hints
+  global output_mode, display_commented, analyze_commented, hide_hints
   debug_print("handle_option()")
   debug_print(the_option)
   if the_option in mode_option_strings :
@@ -305,10 +301,6 @@ def handle_option(the_option) :
       analyze_commented = True
     elif the_option == "-X" :
       analyze_commented = False
-    elif the_option == "-p" :
-      resolve_symlinks = True
-    elif the_option == "-P" :
-      resolve_symlinks = False
     elif the_option == "-h" :
       hide_hints = True
     elif the_option == "-H" :
