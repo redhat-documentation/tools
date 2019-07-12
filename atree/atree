@@ -1,35 +1,50 @@
 #!/usr/bin/python
-# Vladimir Slavik, Red Hat, 2018
+# Vladimir Slavik, Red Hat, 2018, 2019
 
 from __future__ import print_function
 import sys
 import re
-from os.path import dirname, basename, isfile, isdir, join, abspath, exists
+from os.path import dirname, basename, isfile, isdir, join, abspath, exists, realpath
 from os import getcwd, chdir
 from glob import glob
 
 include_finder = re.compile(r"(\/\/)?.*include\:\:([^\[]+)\[") # specific enough, but does not include the parameters
 comment_finder = re.compile(r"(\/{4,})")
-ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|ifeval|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
+ifdef_finder = re.compile(r"(\/\/)?.*((?:ifdef|ifndef|endif)::[^\[]*)\[\]") # needs empty brackets at end = skips inline content
+ifeval_finder = re.compile(r"(\/\/)?.*(ifeval::\[[^\]]+\])") # uses brackets so needs a different syntax
+attrib_finder = re.compile(r"^[\s]*:(!)?([^:]+):(?:[\s]+(.+))?") # undef?,key,value
+inline_attr_finder = re.compile(r"\{[^}]+\}")
 
 do_debug = False
 indent_level = 4
 invalid_chars = set("<>|*:")
+mode_option_strings = ["-a", "-b", "-l"]
+# values: -a annotated (default), -b absolute, -l literal
+other_option_strings = ["-c", "-C", "-x", "-X", "-h", "-H"]
+# values: -c display commented, -x analyze commented, -h hide verbose hints from output
+# uppercase is inversion (default)
+option_strings = mode_option_strings + other_option_strings
+
+stack = []
+attribs = {}
+output_mode = "-a"
+
+display_commented = False
+analyze_commented = False
+hide_hints = False
 
 def debug_print(*var) :
   if do_debug :
     print(*var)
 
-stack = []
-display_commented = False
-analyze_commented = False
-
 class AFile :
   
-  def __init__(self, fname, parent_path="") :
-    debug_print("AFile.__init__", fname, parent_path)
+  def __init__(self, fname, parent_path="", include_line="") :
+    debug_print("AFile.__init__", fname, parent_path, include_line)
     self.fname = fname
     self.parent_path = parent_path
+    self.abs_fname = ""
+    self.include_line = include_line
     self.commented = False # this is in a comment
     self.recursive = False # this is a known infinite recursion
     self.invalid = False # this as an invalid path
@@ -54,15 +69,17 @@ class AFile :
     this_path = dirname(self.fname)
     try :
       if self.parent_path :
-        fn = join(self.parent_path, self.fname)
-        if not exists(fn) :
+        abs_fn = abspath(join(self.parent_path, self.fname))
+        if not exists(abs_fn) :
           self.nonexistent = True
           raise IOError("File does not exist, skipping.")
-        f = open(fn, "r")
-        debug_print("open() ", fn)
+        self.abs_fname = abs_fn
+        f = open(abs_fn, "r")
+        debug_print("open() ", abs_fn)
       else :
         f = open(self.fname, "r")
         debug_print("open() ", self.fname)
+        self.abs_fname = abspath(self.fname)
       lines = f.readlines()
       f.close()
       debug_print("read ok")
@@ -73,20 +90,25 @@ class AFile :
         include_found = include_finder.findall(line)
         for include in include_found :
           debug_print("include::", include[1])
+          include_expanded = resolve_attribs(include[1])
           include_real_dir = abspath(join(self.parent_path, this_path))
           debug_print("real dir", include_real_dir)
-          new_file = AFile(include[1], include_real_dir)
+          new_file = AFile(include_expanded, parent_path=include_real_dir, include_line=line)
           new_file.commented = new_file.commented or (include[0] == "//") or (stack and stack[-1].startswith("//")) or self.commented
-          if (include_real_dir == self.parent_path) and (basename(include[1]) == self.fname) :
+          if (include_real_dir == self.parent_path) and (basename(include_expanded) == self.fname) :
             debug_print("marking as self-recursive due to apparent identity with parent file")
             new_file.recursive = True
-          if any((c in invalid_chars) for c in include[1]) :
+          if any((c in invalid_chars) for c in include_expanded) :
             debug_print("marking as invalid due to weird characters in path")
             new_file.invalid = True
           # exists/nonexistent can not work here because the true file name incl. dir must be constructed, but would be here otherwise
           # all this ^^^ is about determining status of the found include
-          new_file.conditions = [i for i in stack]
+          if len(stack) > 0 :
+            new_file.conditions = get_resolved_conditions()
           self.includes.append(new_file)
+          debug_print("resolving the include")
+          new_file.resolve() # recurse immediately so that the state propagates same as in reality
+          debug_print("return to resolve()", self.parent_path, self.fname)
         # this vvv is about determining if a multiline comment starts or ends here (instead)
         comment_found = comment_finder.findall(line)
         for comment in comment_found :
@@ -99,6 +121,7 @@ class AFile :
         # vvv see if there is a preprocessor condition
         ifdef_found = ifdef_finder.findall(line)
         for ifdef in ifdef_found :
+          debug_print("ifdef:", ifdef)
           if ifdef[0] != "//" : # is the condition not-commented out?
             if ifdef[1].startswith("endif") :
               stack.pop() # assumes there are no condition crossovers
@@ -107,41 +130,135 @@ class AFile :
           else:
             # silently drop commented-out conditions
             debug_print("dropped commented out " + ifdef[1])
-    except Exception as e :
+        ifeval_found = ifeval_finder.findall(line)
+        for ifeval in ifeval_found :
+          debug_print("ifeval:", ifeval)
+          if ifeval[0] != "//" : # is the condition not-commented out?
+            stack.append(ifeval[1])
+          else:
+            # silently drop commented-out conditions
+            debug_print("dropped commented out " + ifeval[1])
+        # vvv act on attributes
+        attrib_found = attrib_finder.findall(line)
+        for attrib in attrib_found :
+          # attrib = [ "!", "name", "value"]
+          sname = sanitize_attrib(attrib[1])
+          if attrib[0] == "!" :
+            # remove the attribute
+            debug_print(":!attribute:", attrib, sname)
+            try :
+              del attribs[sname]
+            except KeyError :
+              pass
+          else :
+            # add it
+            debug_print(":attribute:", attrib, sname)
+            attribs[sname] = resolve_attribs(attrib[2])
+    except (OSError,IOError) as e :
       # expected to catch file exceptions
-      debug_print("Exception caught for resolve()")
+      debug_print("I/O exception caught for resolve()")
       debug_print("self.fname ", self.fname)
       debug_print("self.parent_path", self.parent_path)
       debug_print("curdir ", getcwd())
       debug_print("error ", e)
-    for subfile in self.includes :
-      subfile.resolve()
+    except Exception as e :
+      debug_print("Exception caught for resolve()")
+      debug_print("error ", e)
+      raise
   
   def print_tree(self, level=0) :
-    # first store any mods to the file listing
-    warns = ""
-    if self.commented :
-      warns += "//"
-    if self.recursive :
-      warns += "R!"
-    if self.invalid :
-      warns += "X!"
-    if self.nonexistent :
-      warns += "N!"
-    if warns :
-      warns += " " # terminating space to make it readable
-    if not (not display_commented and self.commented) :
-      # show in all cases except when comments are off and it's comment
-      print(" "*indent_level*level + warns + self.fname)
-    cond = ""
-    for s in self.conditions :
-      if not s.startswith("//") :
-        cond += " " + s
-    if cond :
-      print(" "*indent_level*(level+1) + "\\- !!! "+ cond)
+    debug_print(output_mode)
+    if output_mode == "-a" :
+      # annotated mode (default)
+      # first store any mods to the file listing
+      warns = ""
+      if self.commented :
+        warns += "//"
+      if self.recursive :
+        warns += "R!"
+      if self.invalid :
+        warns += "X!"
+      if self.nonexistent :
+        warns += "N!"
+      if warns :
+        warns += " " # terminating space to make it readable
+      if not (not display_commented and self.commented) :
+        # show in all cases except when comments are off and it's comment
+        print(" "*indent_level*level + warns + self.fname)
+      cond = ""
+      for c in self.conditions :
+        if not c[0].startswith("//") :
+          cond += " %s (%d)" % (c[0], int(c[1]))
+      if cond :
+        print(" "*indent_level*(level+1) + "\\- !!! "+ cond)
+    elif output_mode == "-b" :
+      # absolute mode - print absolute paths
+      if (not self.commented) and check_conditions(self.conditions) :
+        # show only if it is included
+        print(realpath(self.abs_fname))
+    elif output_mode == "-l" :
+      # literal mode - print the include lines
+      if (not self.commented) and check_conditions(self.conditions) :
+        # show only if it is included
+        print(self.include_line.rstrip())
+    else :
+      debug_print("unknown print mode encountered!")
     # invalid, recursive etc. must not have any includes stored so safe to call it with no check
     for subfile in self.includes :
       subfile.print_tree(level+1)
+
+
+def sanitize_attrib(attr) :
+  return attr
+
+
+def resolve_attribs(in_text) :
+  temp = in_text
+  last_pos = 0
+  last_name = ""
+  while True:
+    start = temp.find("{", last_pos)
+    if start == -1 :
+      break # abort if no curly brstackaces remain
+    end = temp.find("}", start)
+    name = temp[start:end+1] # incl. the curly braces!
+    if name == last_name :
+      last_pos = last_pos + 1 # same as last time, move on
+    try :
+      value = attribs[name[1:-1]] # exception should happen only here
+      len_diff = len(name) - len(value)
+      temp = temp.replace(name, resolve_attribs(value))
+      last_pos = start # + len_diff
+    except :
+      # could not expand that thing, move on...
+      last_pos = last_pos + 1
+  return temp
+
+
+def get_resolved_conditions() :
+  global stack, attribs
+  debug_print("get_resolved_conditions()")
+  result = []
+  for cond in stack :
+    if cond.startswith("//") :
+      result.append((cond, False))
+      debug_print(" - comment")
+    elif cond.startswith("ifdef::") :
+      test_attr = cond.split("::",1)[1].split("[",1)[0]
+      check_result = test_attr in attribs
+      result.append((cond, check_result))
+      debug_print(" - ifdef", cond, check_result)
+    elif cond.startswith("ifndef::") :
+      test_attr = cond.split("::",1)[1].split("[",1)[0]
+      check_result = test_attr not in attribs
+      result.append((cond, check_result))
+      debug_print(" - ifndef", cond, check_result)
+  debug_print("get_resolved_conditions() end")
+  return result
+
+
+def check_conditions(conds) :
+  return all([c[1] for c in conds])
 
 
 def guess_file() :
@@ -160,7 +277,7 @@ def guess_file() :
 
 def analyze_path(knownfile) :
   # takes a path that is a known existing file under current situation
-  top = AFile(knownfile)
+  top = AFile(knownfile, include_line="<top: %s>" % (knownfile))
   top.resolve()
   top.print_tree()
 
@@ -197,36 +314,69 @@ def process_path(somepath) :
     analyze_path(the_file)
 
 
+def handle_option(the_option) :
+  global output_mode, display_commented, analyze_commented, hide_hints
+  debug_print("handle_option()")
+  debug_print(the_option)
+  if the_option in mode_option_strings :
+    output_mode = the_option
+  elif the_option in other_option_strings :
+    if the_option == "-c" :
+      display_commented = True
+    elif the_option == "-C" :
+      display_commented = False
+    elif the_option == "-x" :
+      analyze_commented = True
+    elif the_option == "-X" :
+      analyze_commented = False
+    elif the_option == "-h" :
+      hide_hints = True
+    elif the_option == "-H" :
+      hide_hints = False
+  else :
+    debug_print("unknown option encountered!")
+
 
 # MAIN
 curdir = getcwd()
 debug_print(sys.argv)
-if len(sys.argv) < 2 :
+action_stack = [] #
+nitems = 0 # amount of actionable paths
+# first, pass over all arguments and expand globs
+if len(sys.argv) > 1 :
+  items = sys.argv[1:]
+  debug_print(items)
+  for item in items :
+    if item in option_strings :
+      action_stack += [item]
+    else :
+      found = glob(item)
+      action_stack += found
+      nitems += len(found)
+  debug_print(action_stack)
+# by now action_stack has actions or glob-expanded items, so act on each of these sequentially
+  for i in range(len(action_stack)) :
+    item = action_stack[i]
+    if item in option_strings :
+      handle_option(item)
+    else :
+      if not hide_hints :
+        print("Listing %s:" % (item))
+      chdir(curdir)
+      process_path(item)
+      if i < nitems-1 :
+        print() # empty line after last item
+# it is possible there are only options or nothing at all, so check if any paths were printed and if none, try the current one
+if nitems < 1 :
   # called with no params, must guess the file
   the_file = guess_file()
   if not the_file :
     # could not guess, let's fail
-    print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
+    if not hide_hints :
+      print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
     exit(1)
   else :
     # found a default file
     process_path(the_file)
-else :
-  # called with exact params specifying globs for files or dirs 
-  items = sys.argv[1:]
-  debug_print(items)
-  finds = []
-  for item in items :
-    found = glob(item)
-    finds += found
-  debug_print(finds)
-  nitems = len(finds)
-  for i in range(nitems) :
-    item = finds[i]
-    print("Listing %s:" % (item))
-    chdir(curdir)
-    process_path(item)
-    if i < nitems-1 :
-      print() # empty line
 
 # EOF
