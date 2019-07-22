@@ -337,46 +337,46 @@ def handle_option(the_option) :
     debug_print("unknown option encountered!")
 
 
-# MAIN
-curdir = getcwd()
-debug_print(sys.argv)
-action_stack = [] #
-nitems = 0 # amount of actionable paths
-# first, pass over all arguments and expand globs
-if len(sys.argv) > 1 :
-  items = sys.argv[1:]
-  debug_print(items)
-  for item in items :
-    if item in option_strings :
-      action_stack += [item]
-    else :
-      found = glob(item)
-      action_stack += found
-      nitems += len(found)
-  debug_print(action_stack)
-# by now action_stack has actions or glob-expanded items, so act on each of these sequentially
-  for i in range(len(action_stack)) :
-    item = action_stack[i]
-    if item in option_strings :
-      handle_option(item)
-    else :
+if __name__ == "__main__":
+  curdir = getcwd()
+  debug_print(sys.argv)
+  action_stack = [] #
+  nitems = 0 # amount of actionable paths
+  # first, pass over all arguments and expand globs
+  if len(sys.argv) > 1 :
+    items = sys.argv[1:]
+    debug_print(items)
+    for item in items :
+      if item in option_strings :
+        action_stack += [item]
+      else :
+        found = glob(item)
+        action_stack += found
+        nitems += len(found)
+    debug_print(action_stack)
+  # by now action_stack has actions or glob-expanded items, so act on each of these sequentially
+    for i in range(len(action_stack)) :
+      item = action_stack[i]
+      if item in option_strings :
+        handle_option(item)
+      else :
+        if not hide_hints :
+          print("Listing %s:" % (item))
+        chdir(curdir)
+        process_path(item)
+        if i < nitems-1 :
+          print() # empty line after last item
+  # it is possible there are only options or nothing at all, so check if any paths were printed and if none, try the current one
+  if nitems < 1 :
+    # called with no params, must guess the file
+    the_file = guess_file()
+    if not the_file :
+      # could not guess, let's fail
       if not hide_hints :
-        print("Listing %s:" % (item))
-      chdir(curdir)
-      process_path(item)
-      if i < nitems-1 :
-        print() # empty line after last item
-# it is possible there are only options or nothing at all, so check if any paths were printed and if none, try the current one
-if nitems < 1 :
-  # called with no params, must guess the file
-  the_file = guess_file()
-  if not the_file :
-    # could not guess, let's fail
-    if not hide_hints :
-      print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
-    exit(1)
-  else :
-    # found a default file
-    process_path(the_file)
+        print("No parameters specified and no file found that you obviously wanted to be automagically guessed.")
+      exit(1)
+    else :
+      # found a default file
+      process_path(the_file)
 
 # EOF
