@@ -168,17 +168,10 @@ def convert_title_to_id(title, doc_type, options):
         "}": "",
     }
 
-    # Python 2 needs special treatment
-    if PYVERSION == 2:
-        for k in subst_map.keys():
-            v = subst_map[k]
-            converted_id = converted_id.replace(k, v)
-    # Python 3 can use the `translate` function
-    else:
-        trans_table = str.maketrans(subst_map)
-
-        # Perform the substitutions specified by the above dict/table
-        converted_id = converted_id.translate(trans_table)
+    # Perform the substitutions specified by the above dict/table
+    for k in subst_map.keys():
+        v = subst_map[k]
+        converted_id = converted_id.replace(k, v)
 
     # Make sure the converted ID doesn't contain double dashes ("--"), because
     # that breaks references to the ID
