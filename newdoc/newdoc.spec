@@ -1,7 +1,7 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        1.3.3
+Version:        1.4.0
 Release:        1%{?dist}
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
@@ -64,6 +64,13 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Thu Aug 29 2019 Marek Suchánek <msuchane@redhat.com> 1.4.0-1
+- Updated the templates to match upstream; Issue#18
+  (msuchane@redhat.com)
+- Added a readme on building and releasing new package versions
+  (msuchane@redhat.com)
+- Improved ID substitutions (msuchane@redhat.com)
+
 * Thu Aug 29 2019 Marek Suchánek <msuchane@redhat.com> 1.3.3-1
 - Fix the version once more (learning tito, sorry)
 
