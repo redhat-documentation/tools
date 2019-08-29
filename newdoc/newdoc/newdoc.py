@@ -141,8 +141,6 @@ def convert_title_to_id(title, doc_type, options):
         ":": "-",
         ";": "",
         "@": "-at-",
-        "[": "",
-        "]": "",
         "\\": "",
         "`": "",
         "$": "",
@@ -161,6 +159,9 @@ def convert_title_to_id(title, doc_type, options):
         "[application]": "",
         "[function]": "",
         "[gui]": "",
+        # Remove square brackets only after semantic markup:
+        "[": "",
+        "]": "",
         # TODO: Curly braces shouldn't appear in the title in the first place.
         # They'd be interpreted as attributes there.
         # Print an error in that case? Escape them with AciiDoc escapes?
