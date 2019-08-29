@@ -1,12 +1,27 @@
-= Building the newdoc RPM package
+= Building and updating newdoc packages
 
 This file describes how to distribute updates in `newdoc` to the users.
 
-Currently, `newdoc` does not use any fully automated build service. You need to build the package locally and upload it to the Copr repository. However, the process is simplified to some degree with the `tito` utility. Marek Suchánek is the only one with the permissions to the Copr project because it is his account. If this causes any problems, consider creating a new, collective Copr account and using that. However, you must then direct users to enable the new repository configuration.
+Currently, `newdoc` does not use any fully automated build service. You need to build the package locally and upload it to the repositories. You must update the package in the following repositories:
+
+Copr::
+Used for Fedora. The process is simplified to some degree with the `tito` utility. Marek Suchánek is the only one with the permissions to the Copr project because it is his account. If this causes any problems, consider creating a new, collective Copr account and using that. However, you must then direct users to enable the new repository configuration.
+
+PyPI::
+Used for systems that do not use the DNF package manager. This process uses the standard Python packaging tools. Again, Marek Suchánek is the owner of the project on PyPI.
+
+
+== Building the newdoc package
 
 .Prerequisites
 
 * Install the `tito` packaging utility. For more information, see link:https://github.com/dgoodwin/tito/blob/master/README.md[].
+
+* Install the Python packaging utilities:
++
+----
+$ python3 -m pip install --user --upgrade setuptools wheel twine
+----
 
 .Procedure
 
@@ -47,9 +62,42 @@ This creates the new SRPM package in the `/tmp/tito/` directory on your system.
 +
 When the build finishes, the update is immediately available to users.
 
-. To update the `newdoc` package on your system, use:
+. Build the `pip` package:
++
+----
+$ python3 setup.py sdist bdist_wheel
+----
+
+. Upload the package to PyPI:
++
+----
+$ python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+----
+
+
+== Upgrading newdoc
+
+* To update the `newdoc` package on your Fedora system, use:
 +
 ----
 # dnf upgrade --refresh python3-newdoc
 ----
+
+* To update the `newdoc` package that was installed from `pip`:
+
+** For Python 3:
++
+----
+# pip3 install --upgrade newdoc
+----
+
+** For Python 2:
++
+----
+# pip install --upgrade newdoc
+----
+
+== Additional resources
+
+* The Python packaging tutorial: link:https://packaging.python.org/tutorials/packaging-projects/[]
 
