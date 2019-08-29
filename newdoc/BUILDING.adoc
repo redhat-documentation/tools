@@ -1,0 +1,55 @@
+= Building the newdoc RPM package
+
+This file describes how to distribute updates in `newdoc` to the users.
+
+Currently, `newdoc` does not use any fully automated build service. You need to build the package locally and upload it to the Copr repository. However, the process is simplified to some degree with the `tito` utility. Marek Suchánek is the only one with the permissions to the Copr project because it is his account. If this causes any problems, consider creating a new, collective Copr account and using that. However, you must then direct users to enable the new repository configuration.
+
+.Prerequisites
+
+* Install the `tito` packaging utility. For more information, see link:https://github.com/dgoodwin/tito/blob/master/README.md[].
+
+.Procedure
+
+. Commit and push your changes in `newdoc`.
+
+. Tag a new version:
++
+[subs=+quotes]
+----
+$ tito tag --use-version=[replaceable]__1.4.0__
+----
+
+. Push the new tag:
++
+----
+$ git push --follow-tags origin
+----
+
+. Build a source RPM (SRPM) package:
++
+----
+$ tito build --srpm --test
+----
++
+This creates the new SRPM package in the `/tmp/tito/` directory on your system.
+
+. Log into the Copr website: link:https://copr.fedorainfracloud.org/coprs/[].
+
+. Open the *Builds* tab in the `newdoc` project on Copr: link:https://copr.fedorainfracloud.org/coprs/mareksu/newdoc/builds/[].
+
+. Click *New Build*. Under *Select the source type*, choose *Upload*.
+
+. Under *Provide the source*, click *Browse…* and select the SRPM package in `/tmp/tito/`.
+
+. Confirm by clicking *Build*.
+
+. Wait for Copr to build the updated package. You can watch the progress in the *Builds* tab.
++
+When the build finishes, the update is immediately available to users.
+
+. To update the `newdoc` package on your system, use:
++
+----
+# dnf upgrade --refresh python3-newdoc
+----
+
