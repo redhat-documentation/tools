@@ -140,15 +140,32 @@ def convert_title_to_id(title, doc_type, options):
         "/": "-",
         ":": "-",
         ";": "",
-        "@": "",
+        "@": "-at-",
         "[": "",
         "]": "",
         "\\": "",
+        "`": "",
+        "$": "",
+        "^": "",
+        "|": "",
+        # Remove known semantic markup from the ID:
+        "[package]": "",
+        "[option]": "",
+        "[parameter]": "",
+        "[variable]": "",
+        "[command]": "",
+        "[replaceable]": "",
+        "[filename]": "",
+        "[literal]": "",
+        "[systemitem]": "",
+        "[application]": "",
+        "[function]": "",
+        "[gui]": "",
         # TODO: Curly braces shouldn't appear in the title in the first place.
         # They'd be interpreted as attributes there.
         # Print an error in that case? Escape them with AciiDoc escapes?
         "{": "",
-        "}": ""
+        "}": "",
     }
 
     # Python 2 needs special treatment
