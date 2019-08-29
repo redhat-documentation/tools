@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="newdoc",
-    version="v1.3.1",
+    version="v1.3.2",
     license="GPLv3+",
     author="Marek Suchánek",
     author_email="marek.suchanek@protonmail.com",

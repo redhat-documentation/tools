@@ -1,7 +1,7 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        v1.3.1
+Version:        v1.3.2
 Release:        1%{?dist}
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
@@ -64,6 +64,9 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Thu Aug 29 2019 Marek Suchánek <msuchane@redhat.com> v1.3.2-1
+- Bump the version for building purposes
+
 * Wed Aug 28 2019 Marek Suchánek <msuchane@redhat.com> v1.3.1-1
 - Enable the tito packaging system
 
