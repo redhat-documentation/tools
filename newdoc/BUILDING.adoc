@@ -71,7 +71,7 @@ $ python3 setup.py sdist bdist_wheel
 . Upload the package to PyPI:
 +
 ----
-$ python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+$ python3 -m twine upload dist/*
 ----
 
 

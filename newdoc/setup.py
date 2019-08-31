@@ -1,7 +1,7 @@
 # coding=utf-8
 import setuptools
 
-with open("README.md", "r") as fh:
+with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
@@ -12,7 +12,7 @@ setuptools.setup(
     author_email="marek.suchanek@protonmail.com",
     description="A script to generate assembly and module AsciiDoc files from templates.",
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    # long_description_content_type="text/markdown",
     url="https://github.com/mrksu/tools/tree/master/newdoc",
     packages=setuptools.find_packages(),
     entry_points={
