@@ -1,10 +1,11 @@
 = Changelog of the `newdoc` script
 
-== WIP
+== v1.4.0, 2019-08-29
 
 New features:
 
 * newdoc is now packaged as an RPM on Copr: link:https://copr.fedorainfracloud.org/coprs/mareksu/newdoc/[].
+* Templates have been updated to match the upstream modular guidelines.
 
 == v1.3, 2018-08-22
 
