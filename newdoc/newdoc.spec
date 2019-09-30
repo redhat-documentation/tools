@@ -1,7 +1,7 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        1.4.1
+Version:        1.4.2
 Release:        1%{?dist}
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
@@ -64,6 +64,10 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Mon Sep 30 2019 Marek Suchánek <msuchane@redhat.com> 1.4.2-1
+- Fix: Remove a redundant, outdated statement to restore assembly context
+  (msuchane@redhat.com)
+
 * Sat Aug 31 2019 Marek Suchánek <msuchane@redhat.com> 1.4.1-1
 - Converted the readme to RST because PyPI literally can't handle anything else
   (msuchane@redhat.com)
