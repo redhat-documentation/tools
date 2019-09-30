@@ -42,10 +42,6 @@ This paragraph is the assembly introduction. It explains what the user will acco
 * For more details on writing assemblies, see the link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
 * Use a consistent system for file names, IDs, and titles. For tips, see _Anchor Names and File Names_ in link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
 
-// The following line is necessary to allow assemblies be included in other
-// assemblies. It restores the `context` variable to its previous state.
-:context: {parent-context-of-${module_id}}
-
 // Restore the context to what it was before this assembly.
 ifdef::parent-context-of-${module_id}[:context: {parent-context-of-${module_id}}]
 ifndef::parent-context-of-${module_id}[:!context:]
