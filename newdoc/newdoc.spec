@@ -1,7 +1,7 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        1.4.2
+Version:        1.4.3
 Release:        1%{?dist}
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
@@ -64,6 +64,10 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Mon Oct 07 2019 Marek Suchánek <msuchane@redhat.com> 1.4.3-1
+- Fix a reference to the renamed readme in the RPM spec (msuchane@redhat.com)
+- Updated the changelog (msuchane@redhat.com)
+
 * Mon Sep 30 2019 Marek Suchánek <msuchane@redhat.com> 1.4.2-1
 - Fix: Remove a redundant, outdated statement to restore assembly context
   (msuchane@redhat.com)
