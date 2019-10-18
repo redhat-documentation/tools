@@ -1,6 +1,15 @@
 #!/usr/bin/python
 # Vladimir Slavik, Red Hat, 2018
 
+# Replace [discrete]\n== subheading with .subheading, including some common variations of that format.
+# Usage: python fix-subheadings.py target-directory
+
+# Automatically recurses into subdirectories and changes all *.adoc files; for recursion rules see python os.path.walk docs
+
+# To change "[discrete] == headings" to ".headings" in all files in a target directory, go to the
+# directory with the script and use ./fix-subheadings.py target-directory-path (where you replace
+# target-directory-path with the path to the target directory)
+
 from __future__ import print_function
 
 from os.path import walk, isfile, join
