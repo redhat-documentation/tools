@@ -13,9 +13,12 @@ It hasn't been tested on Windows.
 How do I install the script?
 ============================
 
-* To install ``newdoc`` on Fedora, use the Copr package repository: https://copr.fedorainfracloud.org/coprs/mareksu/newdoc/. See the instructions there.
+* To install ``newdoc`` on Fedora or RHEL 8, use the Copr package repository::
 
-* On a Linux distribution that includes Python 3, use the ``pip`` package manager, version 3::
+    # dnf copr enable mareksu/newdoc
+    # dnf install python3-newdoc
+
+* On a different Linux distribution that includes Python 3, use the ``pip`` package manager, version 3::
 
     # pip3 install newdoc
 
