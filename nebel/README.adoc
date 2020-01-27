@@ -1,0 +1,195 @@
+= Nebel Utility for Modular Documentation
+
+`nebel` is a Python command-line tool that implements certain routine tasks associated with creating and managing _modular documentation_. For example, you can use `nebel` to create a new instance of an assembly, procedure, concept, or reference.
+
+== Installing nebel
+
+The `nebel` utility is easy to install, as it does not require any special or non-standard Python libraries.
+
+Prerequisites:
+
+* Python 2.7 -- installed by default on Fedora Linux.
+
+How to install:
+
+. Clone this repository, as follows:
++
+----
+git clone git@github.com:fbolton/nebel.git
+----
+
+. Add the `bin/nebel` executable to your `PATH`. For example, in the Bash shell:
++
+----
+export PATH=/path/to/your/nebel/bin:$PATH
+----
++
+Ideally, you should add this export command to your `~/.bashrc` file, to make `nebel` permanently available.
+
+== Setting up a content repository to use nebel
+
+`nebel` is designed to manage modular content in a documentation repository (presumed to be a Git repository, although that is not a requirement). `nebel` imposes certain requirements on the directory structure of the content repository, as follows:
+
+. There must be a `nebel.cfg` file in the top level of working directory tree.
+This file is required by `nebel` and `nebel` commands _must_ be issued in the same directory as `nebel.cfg`, otherwise `nebel` returns an error.
+
+. Modules (such as procedures, concepts, and references) must be stored under a `modules` directory.
+Create a `modules` directory to store the module files:
++
+----
+mkdir modules
+----
+
+. Assemblies must be stored under an `assemblies` directory.
+Create an `assemblies` directory to store the assembly files:
++
+----
+mkdir assemblies
+----
+
+== Naming conventions for files and directories
+
+=== Naming convention for modules
+
+Files under the `modules` directory have the following general form:
+
+----
+modules/<CATEGORY>/<TYPE>_<MODULE_ID>.adoc
+----
+
+Where `<CATEGORY>` provides a general way of grouping related modules in the context of modular documentation (replacing the concept of a book or guide).
+It is also possible to use compound categories -- such as `camel/enterprise-integration-patterns`, for example -- which implicitly introduces more subdirectories for the sub-categories.
+The `<TYPE>` prefix indicates what kind of module is represented by the file and can have one of the following values:
+
+* `p` -- procedure module
+
+* `c` -- concept module
+
+* `r` -- reference module
+
+The `<MODULE_ID>` is a unique ID for the module (with the format of words separated by hyphens) and it should be identical to the anchor ID that is attached to the module's title.
+That is, the module is assumed to have a title that is defined something like:
+
+----
+[id='<MODULE_ID>']
+= This is a sample title
+----
+
+=== Naming convention for assemblies
+
+Files under the `assemblies` directory have the following general form:
+
+----
+assemblies/<CATEGORY>/as_<MODULE_ID>.adoc
+----
+
+Where `<CATEGORY>` is used in the same way as the categories for modules.
+In particular, closely related assemblies and modules should share the same category.
+
+== Creating content with Nebel
+
+=== Creating modules and assemblies from a CSV file
+
+Nebel enables you to create multiple assemblies and modules quickly from a comma-separated values (CSV) file (which can be obtained by exporting content from a spreadsheet).
+This capability is designed to support a workflow where you design the high-level structure of a guide in a spreadsheet (for example, in Google sheets) and then generate the corresponding assemblies and modules from the spreadsheet data.
+
+A typical CSV file might have a structure like the following:
+
+----
+Category,UserStory,Type,ModuleID,Title,VerifiedInVersion,QuickstartID,Comments,Jira
+installing-on-apache-karaf,"As an Evaluator, I want to install Fuse on Karaf, so that I can try it out quickly and discover whether it meets my needs.",assembly,install-karaf-for-evaluator,,,,Evaluator only has access to the kits published on the developer site. Evaluators like to use an IDE and probably have a Windows machine.,
+installing-on-apache-karaf,"As a Developer, I want to install Fuse on Karaf, so that I can develop Karaf applications on my local machine.",assembly,install-karaf-for-developer,,,,Developer is probably not that worried about which patch they install. Probably wants to configure Maven properly.,
+----
+
+Note that only the `Category`, `Type`, and `ModuleID` columns are required.
+However, if you are using the spreadsheet to define the high-level structure of a guide, you will almost certainly want to include the `UserStory` column as well.
+Some of the additional columns are preserved as metadata (written into comments in the generated module and assembly files), whilst other additional columns are ignored.
+
+Given a CSV file, `sample.csv`, you can generate the corresponding modules and assemblies by entering the following command in your content repository:
+
+----
+nebel create-from sample.csv
+----
+
+=== Creating modules from an assembly file
+
+Nebel can also create new modules by scanning an assembly file for AsciiDoc `include::` directives and -- based on the information available in the include directives -- create corresponding new modules (with boilerplate content).
+
+To create new modules from an assembly file, proceed as follows:
+
+. Edit an existing assembly file to add some `include::` directives for _some modules that do not exist yet_.
+For example, say you have an assembly file, `assemblies/installing-on-apache-karaf/as_install-karaf-for-admin.adoc`, you could add the following include directives:
++
+----
+\include::../../modules/installing-on-apache-karaf/p_download-latest-karaf-patch.adoc[leveloffset=+1]
+
+\include::../../modules/installing-on-apache-karaf/p_unzip-karaf-package.adoc[leveloffset=+1]
+
+\include::../../modules/installing-on-apache-karaf/p_karaf-create-new-user.adoc[leveloffset=+1]
+----
+
+. From the command line, enter the following `nebel` command (from the same directory where `nebel.cfg` is stored):
++
+----
+nebel create-from assemblies/installing-on-apache-karaf/as_install-karaf-for-admin.adoc
+----
++
+After running this command, you should find three new procedure modules under the `modules/installing-on-apache-karaf/` directory.
+
+== Adding symbolic links with Nebel
+
+All content is in the `assemblies` directory and the `modules` directory. For publishing a book, the `master.adoc` file for the book is in another directory, which is a peer to the `assemblies` 
+directory and `modules` directory. To generate the book, you need symbolic links in the book directory to the category directories that contain the assemblies and modules. 
+
+=== Setting up a book directory for symbolic links
+
+In a book directory, before you add symbolic links to category directories, add an `assemblies` directory, an `images` directory, and a `modules` directory. 
+For example, suppose the name of the book directory is `installing-on-jboss-eap`. You want the `installing-on-jboss-eap` directory to contain:
+
+----
+assemblies
+images
+modules
+master-docinfo.xml 
+master.adoc 
+----
+
+=== Running Nebel to add symbolic links
+
+To run nebel to create symbolic links, the command line has the following form:
+
+----
+nebel book book-directory-name -c "category1,category2,...categoryn"
+----
+
+Replace _book-directory-name_ with the name of the directory that contains the book for which you are adding symbolic links to category directories. 
+In the quotation marks, insert the name of each category directory for which you want symbolic links. 
+For example, the following command adds symbolic links to the directory that contains the book,  Installing on JBoss EAP:
+
+----
+nebel book installing-on-jboss-eap -c "installing-on-jboss-eap,maven"
+----
+
+In the `installing-on-jboss-eap/assemblies` directory, the example command adds symbolic links to:
+
+----
+assemblies/installing-on-jboss-eap
+assemblies/maven
+----
+
+In the `installing-on-jboss-eap/modules` directory, the example command adds symbolic links to:
+
+----
+modules/installing-on-jboss-eap
+modules/maven
+----
+
+In the `installing-on-jboss-eap/images` directory, the example command adds symbolic links to:
+
+----
+images/installing-on-jboss-eap
+images/maven
+----
+
+At a later time, if you add a new category in the main `assemblies` directory or in the main `modules` directory, 
+you can run the command again and specify only the new catagory or catagories. 
