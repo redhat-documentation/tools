@@ -59,9 +59,9 @@ class ModuleFactory:
         category = metadata['Category']
         type = metadata['Type'].lower()
         if type == 'assembly':
-            return os.path.join('assemblies', category)
+            return os.path.join(self.context.ASSEMBLIES_DIR, category)
         elif type in ['procedure', 'concept', 'reference', 'module']:
-            return os.path.join('modules', category)
+            return os.path.join(self.context.MODULES_DIR, category)
         else:
             print 'ERROR: Unknown module Type: ' + str(type)
             sys.exit()

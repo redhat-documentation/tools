@@ -27,13 +27,17 @@ class NebelContext:
             'ConversionDate',
             'ConvertedFromFile',
             'ConvertedFromID',
-            'ConvertedFromTitle'
+            'ConvertedFromTitle',
+            'Level'
         }
         self.allMetadataFields = self.mandatoryMetadataFields | self.optionalMetadataFields
         self.templatePath = ''
         self.moduleFactory = None
         self.attributeDict = {}
         self.bookUrlAttributes = {}
+        self.ASSEMBLIES_DIR = 'assemblies'
+        self.MODULES_DIR = 'modules'
+        self.IMAGES_DIR = 'images'
         self.ASSEMBLY_PREFIX = 'as'
         self.PROCEDURE_PREFIX = 'p'
         self.CONCEPT_PREFIX = 'c'
@@ -42,14 +46,20 @@ class NebelContext:
     def initializeFromFile(self, configfile):
         # print 'Initializing from file: ' + configfile
         config = ConfigParser.RawConfigParser(
-            {'prefix.assembly': self.ASSEMBLY_PREFIX,
+            {'dir.assemblies': self.ASSEMBLIES_DIR,
+             'dir.modules': self.MODULES_DIR,
+             'dir.images': self.IMAGES_DIR,
+             'prefix.assembly': self.ASSEMBLY_PREFIX,
              'prefix.procedure': self.PROCEDURE_PREFIX,
              'prefix.concept': self.CONCEPT_PREFIX,
              'prefix.reference': self.REFERENCE_PREFIX}
         )
         config.read(configfile)
         if config.has_section('Nebel'):
-            self.ASSEMBLY_PREFIX  = config.get('Nebel','prefix.assembly')
+            self.ASSEMBLIES_DIR   = config.get('Nebel', 'dir.assemblies')
+            self.MODULES_DIR      = config.get('Nebel', 'dir.modules')
+            self.IMAGES_DIR       = config.get('Nebel', 'dir.images')
+            self.ASSEMBLY_PREFIX  = config.get('Nebel', 'prefix.assembly')
             self.PROCEDURE_PREFIX = config.get('Nebel', 'prefix.procedure')
             self.CONCEPT_PREFIX   = config.get('Nebel', 'prefix.concept')
             self.REFERENCE_PREFIX = config.get('Nebel', 'prefix.reference')
