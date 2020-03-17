@@ -13,6 +13,7 @@ import argparse
 import nebel.context
 import nebel.factory
 import datetime
+import glob
 
 class Tasks:
     def __init__(self, context):
@@ -50,7 +51,7 @@ class Tasks:
         metadata = {'Type':'reference'}
         self._create(args, metadata)
 
-    def add_include_to_assembly(self, assemblyfile, includedfile):
+    def add_include_to_assembly(self, assemblyfile, includedfile, leveloffset=1):
         if not os.path.exists(assemblyfile):
             print 'WARN: Referenced assembly file does not exist:' + assemblyfile
             return
@@ -78,7 +79,7 @@ class Tasks:
                     if k == position_of_new_include:
                         relpath = os.path.relpath(includedfile, os.path.dirname(assemblyfile))
                         new_file.write('\n')
-                        new_file.write('include::' + relpath + '[leveloffset=+1]\n\n')
+                        new_file.write('include::' + relpath + '[leveloffset=+' + str(leveloffset) + ']\n\n')
         # Remove original file
         os.remove(assemblyfile)
         # Move new file
@@ -93,7 +94,7 @@ class Tasks:
         if fromfile.endswith('.csv'):
             self._create_from_csv(args)
             return
-        elif fromfile.startswith('assemblies')\
+        elif fromfile.startswith(self.context.ASSEMBLIES_DIR)\
                 and fromfile.endswith('.adoc')\
                 and os.path.basename(fromfile).startswith(self.context.ASSEMBLY_PREFIX):
             self._create_from_assembly(args)
@@ -127,6 +128,14 @@ class Tasks:
             return base.split('_', 1)[1]
         else:
             return base
+
+    def title_to_id(self, title):
+        title = title.strip()
+        # Remove any character which is not a dash, underscore, alphanumeric, or whitespace
+        title = re.sub(r'[^0-9a-zA-Z_\-\s]+', '', title)
+        # Replace one or more contiguous whitespaces with a dash
+        title = re.sub(r'\s+', '-', title)
+        return title
 
     def _create_from_assembly(self,args):
         asfile = args.FROM_FILE
@@ -327,23 +336,24 @@ class Tasks:
 
 
 
-    def _scan_assembly_for_includes(self,asfile):
-        modulelist = []
-        regexp = re.compile(r'^\s*include::[\./]*modules/([^\[]+)\[[^\]]*\]')
+    def _scan_file_for_includes(self, asfile):
+        includedfilelist = []
+        regexp = re.compile(r'^\s*include::([^\[]+)\[[^\]]*\]')
         with open(asfile, 'r') as f:
             for line in f:
                 result = regexp.search(line)
                 if result is not None:
-                    modulefile = result.group(1)
-                    category, basename = os.path.split(modulefile)
-                    type = self.type_of_file(basename)
-                    if type is not None and basename.endswith('.adoc'):
-                        modulelist.append(os.path.join('modules', modulefile))
-        return modulelist
+                    includedfile = result.group(1)
+                    directory = os.path.dirname(asfile)
+                    path_to_included_file = os.path.relpath(os.path.realpath(os.path.normpath(os.path.join(directory, includedfile))))
+                    if includedfile.endswith('.adoc'):
+                        includedfilelist.append(path_to_included_file)
+        return includedfilelist
 
 
     def _create_from_csv(self,args):
         csvfile = args.FROM_FILE
+        USING_LEVELS = False
         with open(csvfile, 'r') as filehandle:
             # First line should be the column headings
             headings = filehandle.readline().strip().replace(' ','')
@@ -352,11 +362,20 @@ class Tasks:
             if ('Category' not in headinglist) or ('ModuleID' not in headinglist):
                 print 'ERROR: CSV file does not have correct format'
                 sys.exit()
+            if 'Level' in headinglist:
+                USING_LEVELS = True
+            # Create initial copy of the generated-master.adoc file
+            MASTERDOC_FILENAME = 'generated-master.adoc'
+            templatefile = os.path.join(self.context.templatePath, 'master.adoc')
+            shutil.copyfile(templatefile, MASTERDOC_FILENAME)
+            # Initialize variables to track level nesting
+            nestedfilestack = []
+            nestedlevelstack = []
+            currentfile = MASTERDOC_FILENAME
+            currentlevel = 0
+            # Read and parse the CSV file
             completefile = filehandle.read()
             lines = self.smart_split(completefile, '\n', preserveQuotes=True)
-            currassemblymetadata = {}
-            currassemblyincludes = []
-            currassemblypath = ''
             for line in lines:
                 if line.strip() != '':
                     fieldlist = self.smart_split(line.strip())
@@ -371,38 +390,35 @@ class Tasks:
                             del(metadata[field])
                     if metadata['Type'] == '':
                         # Assume it's an empty row (i.e. fields are empty, row is just commas)
-                        if args.generate_includes:
-                            if currassemblymetadata:
-                                # Finish up current (pending) assembly, if any
-                                if currassemblyincludes:
-                                    currassemblymetadata['IncludeFiles'] = ','.join(currassemblyincludes)
-                                self.context.moduleFactory.create(currassemblymetadata)
-                            # Reset the current assembly
-                            currassemblymetadata = {}
-                            currassemblyincludes = []
-                            currassemblypath = ''
+                        if (not USING_LEVELS) and (currentlevel == 1):
+                            # Pop back to level 0
+                            currentfile = nestedfilestack.pop()
+                            currentlevel = nestedlevelstack.pop()
                         # Skip empty row
                         continue
-                    elif (metadata['Type'] == 'assembly') and args.generate_includes:
-                        if currassemblymetadata:
-                            # Finish up current (pending) assembly, if any
-                            if currassemblyincludes:
-                                currassemblymetadata['IncludeFiles'] = ','.join(currassemblyincludes)
-                            self.context.moduleFactory.create(currassemblymetadata)
-                        # Reset the current assembly
-                        currassemblymetadata = metadata
-                        currassemblyincludes = []
-                        currassemblypath = self.context.moduleFactory.module_or_assembly_path(metadata)
+                    # Process modules and assemblies
+                    if USING_LEVELS:
+                        level = int(metadata['Level'])
                     else:
-                        if currassemblypath:
-                            metadata['ParentAssemblies'] = currassemblypath
-                            currassemblyincludes.append(self.context.moduleFactory.module_or_assembly_path(metadata))
-                        self.context.moduleFactory.create(metadata)
-            if currassemblymetadata:
-                # Finish up current (pending) assembly, if any
-                if currassemblyincludes:
-                    currassemblymetadata['IncludeFiles'] = ','.join(currassemblyincludes)
-                self.context.moduleFactory.create(currassemblymetadata)
+                        if (metadata['Type'] == 'assembly'):
+                            # For sheets without levels, assemblies are always level 1
+                            level = 1
+                        else:
+                            # Calculate module level, for a sheet without levels
+                            level = currentlevel + 1
+                    while level <= currentlevel:
+                        # Dig back through the stack to find the parent of this module or assembly
+                        currentfile = nestedfilestack.pop()
+                        currentlevel = nestedlevelstack.pop()
+                    metadata['ParentAssemblies'] = currentfile
+                    newfile = self.context.moduleFactory.create(metadata)
+                    self.add_include_to_assembly(currentfile, newfile, level - currentlevel)
+                    if (metadata['Type'] == 'assembly'):
+                        # Push the assembly onto the level stack
+                        nestedfilestack.append(currentfile)
+                        nestedlevelstack.append(currentlevel)
+                        currentfile = newfile
+                        currentlevel = level
 
 
     def smart_split(self, line, splitchar=',', preserveQuotes=False):
@@ -436,6 +452,9 @@ class Tasks:
 
 
     def book(self,args):
+        if self.context.ASSEMBLIES_DIR == '.' or self.context.MODULES_DIR == '.':
+            print 'ERROR: book command is only usable for a standard directory layout, with defined assemblies and modules directories'
+            sys.exit()
         if args.create:
             # Create book and (optionally) add categories
             self._book_create(args)
@@ -452,9 +471,9 @@ class Tasks:
             print 'ERROR: Book directory already exists: ' + bookdir
             sys.exit()
         os.mkdir(bookdir)
-        os.mkdir(os.path.join(bookdir, 'assemblies'))
-        os.mkdir(os.path.join(bookdir, 'modules'))
-        os.mkdir(os.path.join(bookdir, 'images'))
+        os.mkdir(os.path.join(bookdir, self.context.ASSEMBLIES_DIR))
+        os.mkdir(os.path.join(bookdir, self.context.MODULES_DIR))
+        os.mkdir(os.path.join(bookdir, self.context.IMAGES_DIR))
         os.symlink(os.path.join('..', 'shared', 'attributes.adoc'), os.path.join(bookdir, 'attributes.adoc'))
         os.symlink(
             os.path.join('..', 'shared', 'attributes-links.adoc'),
@@ -474,9 +493,9 @@ class Tasks:
         if not os.path.exists(bookdir):
             print 'ERROR: Book directory does not exist: ' + bookdir
             sys.exit()
-        imagesdir = os.path.join(bookdir, 'images')
-        modulesdir = os.path.join(bookdir, 'modules')
-        assembliesdir = os.path.join(bookdir, 'assemblies')
+        imagesdir = os.path.join(bookdir, self.context.IMAGES_DIR)
+        modulesdir = os.path.join(bookdir, self.context.MODULES_DIR)
+        assembliesdir = os.path.join(bookdir, self.context.ASSEMBLIES_DIR)
         if not os.path.exists(imagesdir):
             os.mkdir(imagesdir)
         if not os.path.exists(modulesdir):
@@ -486,25 +505,25 @@ class Tasks:
         categorylist = args.category_list.split(',')
         map(str.strip, categorylist)
         for category in categorylist:
-            if not os.path.exists(os.path.join(imagesdir, category)):
+            if not os.path.islink(os.path.join(imagesdir, category)):
                 os.symlink(
-                    os.path.join('..', '..', 'images', category),
+                    os.path.join('..', '..', self.context.IMAGES_DIR, category),
                     os.path.join(imagesdir, category)
                 )
-            if not os.path.exists(os.path.join(modulesdir, category)):
+            if not os.path.islink(os.path.join(modulesdir, category)):
                 os.symlink(
-                    os.path.join('..', '..', 'modules', category),
+                    os.path.join('..', '..', self.context.MODULES_DIR, category),
                     os.path.join(modulesdir, category)
                 )
-            if not os.path.exists(os.path.join(assembliesdir, category)):
+            if not os.path.islink(os.path.join(assembliesdir, category)):
                 os.symlink(
-                    os.path.join('..', '..', 'assemblies', category),
+                    os.path.join('..', '..', self.context.ASSEMBLIES_DIR, category),
                     os.path.join(assembliesdir, category)
                 )
 
 
     def update(self,args):
-        if (not args.fix_includes) and (not args.parent_assemblies) and (not args.fix_links):
+        if (not args.fix_includes) and (not args.parent_assemblies) and (not args.fix_links) and (not args.generate_ids):
             print 'ERROR: Missing required option(s)'
             sys.exit()
         # Determine the set of categories to update
@@ -516,17 +535,17 @@ class Tasks:
             if not os.path.exists(args.book):
                 print 'ERROR: ' + args.book + ' directory does not exist.'
                 sys.exit()
-            categoryset = self.scan_for_categories(os.path.join(args.book, 'modules'))\
-                          | self.scan_for_categories(os.path.join(args.book, 'assemblies'))
+            categoryset = self.scan_for_categories(os.path.join(args.book, self.context.MODULES_DIR))\
+                          | self.scan_for_categories(os.path.join(args.book, self.context.ASSEMBLIES_DIR))
         else:
-            categoryset = self.scan_for_categories('modules') | self.scan_for_categories('assemblies')
+            categoryset = self.scan_for_categories(self.context.MODULES_DIR) | self.scan_for_categories(self.context.ASSEMBLIES_DIR)
         if args.attribute_files:
             attrfilelist = args.attribute_files.strip().split(',')
         else:
             attrfilelist = None
-        assemblyfiles = self.scan_for_categorised_files('assemblies', categoryset)
-        modulefiles = self.scan_for_categorised_files('modules', categoryset)
-        imagefiles = self.scan_for_categorised_files('images', categoryset)
+        assemblyfiles = self.scan_for_categorised_files(self.context.ASSEMBLIES_DIR, categoryset, filefilter='assembly')
+        modulefiles = self.scan_for_categorised_files(self.context.MODULES_DIR, categoryset, filefilter='module')
+        imagefiles = self.scan_for_categorised_files(self.context.IMAGES_DIR, categoryset)
         # Select the kind of update to implement
         if args.fix_includes:
             self._update_fix_includes(assemblyfiles, modulefiles)
@@ -534,6 +553,8 @@ class Tasks:
             self._update_fix_links(assemblyfiles, modulefiles, attrfilelist)
         if args.parent_assemblies:
             self._update_parent_assemblies(assemblyfiles)
+        if args.generate_ids:
+            self._update_generate_ids(assemblyfiles, modulefiles)
 
 
     def scan_for_categories(self, rootdir):
@@ -549,7 +570,7 @@ class Tasks:
         return categoryset
 
 
-    def scan_for_categorised_files(self, rootdir, categoryset):
+    def scan_for_categorised_files(self, rootdir, categoryset, filefilter=None):
         filelist = []
         for category in categoryset:
             categorydir = os.path.join(rootdir, category)
@@ -557,7 +578,12 @@ class Tasks:
                 for entry in os.listdir(categorydir):
                     pathname = os.path.join(rootdir, category, entry)
                     if os.path.isfile(pathname):
-                        filelist.append(pathname)
+                        if filefilter is None:
+                            filelist.append(pathname)
+                        elif filefilter == 'assembly' and self.type_of_file(entry) == 'assembly':
+                            filelist.append(pathname)
+                        elif filefilter == 'module' and self.type_of_file(entry) in ['module', 'concept', 'procedure', 'reference']:
+                            filelist.append(pathname)
         return filelist
 
 
@@ -651,11 +677,11 @@ class Tasks:
             return None
 
 
-    def _update_parent_assemblies(self, assemblylist):
+    def _scan_for_parent_assemblies(self, assemblylist):
         # Create dictionary of modules included by assemblies
         assemblyincludes = {}
         for assemblyfile in assemblylist:
-            assemblyincludes[assemblyfile] = self._scan_assembly_for_includes(assemblyfile)
+            assemblyincludes[assemblyfile] = self._scan_file_for_includes(assemblyfile)
         # print assemblyincludes
         # Invert dictionary
         parentassemblies = {}
@@ -665,12 +691,17 @@ class Tasks:
                     parentassemblies[modulefile] = [assemblyfile]
                 else:
                     parentassemblies[modulefile].append(assemblyfile)
-        # print parentassemblies
+        return parentassemblies
+
+
+    def _update_parent_assemblies(self, assemblylist):
+        parentassemblies = self._scan_for_parent_assemblies(assemblylist)
         # Update the ParentAssemblies metadata in each of the module files
         metadata = {}
         for modulefile in parentassemblies:
             metadata['ParentAssemblies'] = ','.join(parentassemblies[modulefile])
             self.update_metadata(modulefile, metadata)
+
 
     def _update_fix_links(self, assemblyfiles, modulefiles, attrfilelist = None):
         # Set of files whose links should be fixed
@@ -900,6 +931,7 @@ class Tasks:
                     else:
                         # Context already defined, overwrite current value
                         contextstack[-1] = newcontext
+                    REMEMBER_TO_POP_CONTEXT = True
                 elif action == INCLUDE_LINE:
                     currentdir, basename = os.path.split(filepath)
                     includefile = os.path.normpath(os.path.join(currentdir, includefile))
@@ -912,6 +944,47 @@ class Tasks:
         if REMEMBER_TO_POP_CONTEXT:
             contextstack.pop()
         return anchorid_dict, contextstack, legacyid_dict
+
+    def _update_generate_ids(self, assemblyfiles, modulefiles):
+        # Set of files for which IDs should be generated
+        fixfileset = set(assemblyfiles) | set(modulefiles)
+
+        # Define regular expressions
+        regexp_id_line1 = re.compile(r'^\s*\[\[\s*(\S+)\s*\]\]\s*$')
+        regexp_id_line2 = re.compile(r'^\s*\[id\s*=\s*[\'"]\s*(\S+)\s*[\'"]\]\s*$')
+        regexp_title = re.compile(r'^(=+)\s+(\S.*)')
+
+        for fixfile in fixfileset:
+            print 'Adding missing IDs to file: ' + fixfile
+            dirname, basename = os.path.split(os.path.normpath(fixfile))
+            idprefix = dirname.replace(os.sep, '-').replace('_', '-') + '-' + self.moduleid_of_file(basename)
+            # Create temp file
+            fh, abs_path = tempfile.mkstemp()
+            with os.fdopen(fh, 'w') as new_file:
+                with open(fixfile) as old_file:
+                    prevline = ''
+                    newidlist = []
+                    disambig_suffix = 1
+                    for line in old_file:
+                        if (regexp_title.search(line) is not None)\
+                                and (regexp_id_line1.search(prevline) is None)\
+                                and (regexp_id_line2.search(prevline) is None):
+                            # Parse title line
+                            result = regexp_title.search(line)
+                            title = result.group(2)
+                            # Insert module ID
+                            newid = idprefix + '-' + self.title_to_id(title)
+                            if newid in newidlist:
+                                newid = newid + '-' + '{0:0>3}'.format(disambig_suffix)
+                                disambig_suffix += 1
+                            newidlist.append(newid)
+                            new_file.write('[id="' + newid + '"]\n')
+                        new_file.write(line)
+                        prevline = line
+            # Remove original file
+            os.remove(fixfile)
+            # Move new file
+            shutil.move(abs_path, fixfile)
 
 
     def update_metadata(self, file, metadata):
@@ -957,6 +1030,86 @@ class Tasks:
                             metaname = result.group(1)
                             if metaname in properties2update:
                                 new_file.write('// ' + metaname + ': ' + metadata[metaname] + '\n')
+                                continue
+                    new_file.write(line)
+        # Remove original file
+        os.remove(file)
+        # Move new file
+        shutil.move(abs_path, file)
+
+
+    def mv(self, args):
+        frompattern = os.path.normpath(args.FROM_FILE)
+        topattern = os.path.normpath(args.TO_FILE)
+        # Generate a database of parent assemblies
+        categoryset = self.scan_for_categories(self.context.ASSEMBLIES_DIR)
+        assemblyfiles = self.scan_for_categorised_files(self.context.ASSEMBLIES_DIR, categoryset)
+        bookfiles = glob.glob('*/master.adoc')
+        parentassemblies = self._scan_for_parent_assemblies(assemblyfiles + bookfiles)
+        # print parentassemblies[fromfile]
+        # Move each file
+        if frompattern.find('{}') == -1:
+            # No glob patterns => move a single file
+            self._mv_single_file(parentassemblies, fromfile=frompattern, tofile=topattern)
+        elif frompattern.count('{}') != 1:
+            print 'ERROR: More than one glob pattern {} is not allowed in FROM_FILE'
+            sys.exit()
+        elif topattern.count('{}') != 1:
+            print 'ERROR: TO_FILE must contain a {} substitution pattern'
+            sys.exit()
+        else:
+            fromprefix, fromsuffix = frompattern.split('{}')
+            fromprefixlen = len(fromprefix)
+            fromsuffixlen = len(fromsuffix)
+            fromfiles = glob.glob(frompattern.replace('{}', '*'))
+            for fromfile in fromfiles:
+                fromfilling = fromfile[fromprefixlen : -fromsuffixlen]
+                toprefix, tosuffix = topattern.split('{}')
+                tofile = toprefix + fromfilling + tosuffix
+                self._mv_single_file(parentassemblies, fromfile, tofile)
+
+
+    def _mv_single_file(self, parentassemblies, fromfile, tofile):
+        # Perform basic sanity checks
+        if not os.path.exists(fromfile):
+            print 'WARN: Origin file does not exist (skipping): ' + fromfile
+            return
+        if os.path.exists(tofile):
+            print 'WARN: File already exists at destination (skipping)' + tofile
+            return
+        # Make sure that the destination directory exists
+        destination_dir, basename = os.path.split(tofile)
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
+        # Move the file
+        os.rename(fromfile, tofile)
+        # Update the affected 'include' directives in other files
+        if parentassemblies.has_key(fromfile):
+            for parentassembly in parentassemblies[fromfile]:
+                self._rename_included_file(parentassembly, fromfile, tofile)
+
+
+    def _rename_included_file(self, file, fromfile, tofile):
+        # Ignore include paths with attribute substitutions
+        regexp = re.compile(r'^\s*include::([^\[\{]+)\[([^\]]*)\]')
+        dirname, basename = os.path.split(file)
+        # Create temp file
+        fh, abs_path = tempfile.mkstemp()
+        with os.fdopen(fh, 'w') as new_file:
+            with open(file) as old_file:
+                for line in old_file:
+                    if line.lstrip().startswith('include::'):
+                        result = regexp.search(line)
+                        if result is not None:
+                            includepath = result.group(1)
+                            # Compute unique relative path, factoring out any symbolic links
+                            testpath = os.path.relpath(os.path.realpath(os.path.normpath(os.path.join(dirname, includepath))))
+                            if testpath == os.path.normpath(fromfile):
+                                if basename == 'master.adoc':
+                                    newincludepath = tofile
+                                else:
+                                    newincludepath = os.path.relpath(tofile, dirname)
+                                new_file.write('include::' + newincludepath + '[' + result.group(2) + ']\n')
                                 continue
                     new_file.write(line)
         # Remove original file
@@ -1013,9 +1166,8 @@ add_module_arguments(reference_parser)
 reference_parser.set_defaults(func=tasks.create_reference)
 
 # Create the sub-parser for the 'create-from' command
-create_parser = subparsers.add_parser('create-from', help='Create multiple assemblies/modules from a CSV file, an assembly file, or a legacy AsciiDoc file')
-create_parser.add_argument('FROM_FILE', help='Can be either a comma-separated values (CSV) file (ending with .csv), an assembly file (starting with assemblies/ and ending with .adoc), or a legacy AsciiDoc file (ending with .adoc)')
-create_parser.add_argument('--generate-includes', help='Generate include directives in assemblies, working on the assumption that the modules listed after an assembly are meant to be included in that assembly', action='store_true')
+create_parser = subparsers.add_parser('create-from', help='Create multiple {}/modules from a CSV file, an assembly file, or a legacy AsciiDoc file'.format(context.ASSEMBLIES_DIR))
+create_parser.add_argument('FROM_FILE', help='Can be either a comma-separated values (CSV) file (ending with .csv), an assembly file (starting with {}/ and ending with .adoc), or a legacy AsciiDoc file (ending with .adoc)'.format(context.ASSEMBLIES_DIR))
 create_parser.set_defaults(func=tasks.create_from)
 
 # Create the sub-parser for the 'book' command
@@ -1025,6 +1177,12 @@ book_parser.add_argument('--create', help='Create a new book directory', action=
 book_parser.add_argument('-c', '--category-list', help='Comma-separated list of categories to add to book (enclose in quotes)')
 book_parser.set_defaults(func=tasks.book)
 
+# Create the sub-parser for the 'mv' command
+book_parser = subparsers.add_parser('mv', help='Move (or rename) module or assembly files. You can optionally use a single instance of braces for globbing/substituting. For example, to change a file prefix from p_ to proc_ you could enter: nebel mv p_{}.adoc proc_{}.adoc')
+book_parser.add_argument('FROM_FILE', help='File origin. Optionally use {} for globbing.')
+book_parser.add_argument('TO_FILE', help='File destination. Optionally use {} to substitute captured glob content')
+book_parser.set_defaults(func=tasks.mv)
+
 # Create the sub-parser for the 'update' command
 update_parser = subparsers.add_parser('update', help='Update metadata in modules and assemblies')
 update_parser.add_argument('--fix-includes', help='Fix erroneous include directives in assemblies', action='store_true')
@@ -1033,6 +1191,7 @@ update_parser.add_argument('-p','--parent-assemblies', help='Update ParentAssemb
 update_parser.add_argument('-c', '--category-list', help='Apply update only to this comma-separated list of categories (enclose in quotes)')
 update_parser.add_argument('-b', '--book', help='Apply update only to the specified book')
 update_parser.add_argument('-a', '--attribute-files', help='Specify a comma-separated list of attribute files')
+update_parser.add_argument('--generate-ids', help='Generate missing IDs for headings', action='store_true')
 update_parser.set_defaults(func=tasks.update)
 
 
