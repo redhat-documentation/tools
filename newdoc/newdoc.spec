@@ -1,8 +1,8 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        1.4.3
-Release:        3%{?dist}
+Version:        1.5.0
+Release:        1
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
 License:        GPLv3+
@@ -42,6 +42,14 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Tue Jun 23 2020 Marek Suchánek <msuchane@redhat.com> 1.5.0-1
+- Remove the remaining Python 2 code (msuchane@redhat.com)
+- Align the Optional formatting with the IBM Style Guide; #29
+  (msuchane@redhat.com)
+- Remove Python 2 packaging (marek.suchanek@protonmail.com)
+- Update outdated version information (marek.suchanek@protonmail.com)
+- Clarify newdoc install instructions (msuchane@redhat.com)
+
 * Mon Oct 07 2019 Marek Suchánek <msuchane@redhat.com> 1.4.3-1
 - Fix a reference to the renamed readme in the RPM spec (msuchane@redhat.com)
 - Updated the changelog (msuchane@redhat.com)
