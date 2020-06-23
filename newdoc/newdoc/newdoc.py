@@ -7,22 +7,10 @@ import io
 import argparse
 from string import Template
 
-NEWDOC_VERSION = "1.4.3"
-
-# Record whether we're running under Python 2 or 3
-PYVERSION = sys.version_info.major
+NEWDOC_VERSION = "1.5.0"
 
 # The configparser module is called ConfigParser in Python2
-if PYVERSION == 2:
-    import ConfigParser as cp
-else:
-    import configparser as cp
-
-# Force Python 2 to use the UTF-8 encoding. Otherwise, loading a template
-# containing Unicode characters fails.
-if PYVERSION == 2:
-    reload(sys)
-    sys.setdefaultencoding('utf8')
+import configparser as cp
 
 # The directory where the script is located
 SCRIPT_HOME_DIR = os.path.dirname(__file__)
@@ -92,7 +80,7 @@ def get_config():
 
         for k in options.keys():
             # The configparser library is different in Python 2 and 3.
-            # This si the only 2/3-compatible way I've found for optional keys.
+            # This is the only 2/3-compatible way I've found for optional keys.
             try:
                 options[k] = config.get("newdoc", k)
             except cp.NoOptionError:
@@ -204,12 +192,6 @@ def write_file(out_file, module_content):
     performing necessary checks
     """
 
-    # In Python 2, the `input` function is called `raw_input`
-    if PYVERSION == 2:
-        compatible_input = raw_input
-    else:
-        compatible_input = input
-
     # Check if the file exists; abort if so
     if os.path.exists(out_file):
         print('File already exists: "{}"'.format(out_file))
@@ -218,7 +200,7 @@ def write_file(out_file, module_content):
         decision = None
 
         while not decision:
-            response = compatible_input("Overwrite it? [yes/no] ").lower()
+            response = input("Overwrite it? [yes/no] ").lower()
 
             if response in ["yes", "y"]:
                 print("Overwriting.")
@@ -232,13 +214,8 @@ def write_file(out_file, module_content):
     # Write the file
     with open(out_file, "w") as f:
         f.write(module_content)
-    # In Python 2, the UTF-8 encoding has to be specified explicitly
-    if PYVERSION == 2:
-        with io.open(out_file, mode="w", encoding="utf-8") as f:
-            f.write(module_content)
-    else:
-        with open(out_file, "w") as f:
-            f.write(module_content)
+    with open(out_file, "w") as f:
+        f.write(module_content)
 
     print("File successfully generated.")
     print("To include this file from an assembly, use:")
@@ -271,13 +248,8 @@ def create_module(title, doc_type, options, delete_comments):
         print("Error: Template file not found: '{}'".format(template_file))
         exit(1)
 
-    # In Python 2, the UTF-8 encoding has to be specified explicitly
-    if PYVERSION == 2:
-        with io.open(template_file, mode="r", encoding="utf-8") as f:
-            template = f.read()
-    else:
-        with open(template_file, "r") as f:
-            template = f.read()
+    with open(template_file, "r") as f:
+        template = f.read()
 
     # Prepare the content of the new module
     module_content = Template(template).substitute(module_title=title,
