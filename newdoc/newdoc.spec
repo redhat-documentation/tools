@@ -42,6 +42,10 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Fri Sep 25 2020 Marek Suchánek <msuchane@redhat.com> 1.5.1-1
+- Announce the deprecation of this version and the migration to the new one
+  (msuchane@redhat.com)
+
 * Tue Jun 23 2020 Marek Suchánek <msuchane@redhat.com> 1.5.0-1
 - Remove the remaining Python 2 code (msuchane@redhat.com)
 - Align the Optional formatting with the IBM Style Guide; #29
