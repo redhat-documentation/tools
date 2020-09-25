@@ -1,8 +1,8 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        1.4.3
-Release:        1%{?dist}
+Version:        1.5.1
+Release:        1
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 
 License:        GPLv3+
@@ -10,18 +10,10 @@ URL:            https://pypi.python.org/pypi/%{srcname}
 Source0:        %pypi_source
 
 BuildArch:      noarch
-BuildRequires:  python2-devel python3-devel
+BuildRequires:  python3-devel
 
 %description
 A script to generate assembly and module AsciiDoc files from templates
-
-%package -n python2-%{srcname}
-Summary:        %{summary}
-%{?python_provide:%python_provide python2-%{srcname}}
-
-%description -n python2-%{srcname}
-A script to generate assembly and module AsciiDoc files from templates
-
 
 %package -n python3-%{srcname}
 Summary:        %{summary}
@@ -35,27 +27,13 @@ A script to generate assembly and module AsciiDoc files from templates
 %autosetup -n %{srcname}-%{version}
 
 %build
-%py2_build
 %py3_build
 
 %install
-# Must do the python2 install first because the scripts in /usr/bin are
-# overwritten with every setup.py install, and in general we want the
-# python3 version to be the default.
-# If, however, we're installing separate executables for python2 and python3,
-# the order needs to be reversed so the unversioned executable is the python2 one.
-%py2_install
 %py3_install
 
 %check
-%{__python2} setup.py test
 %{__python3} setup.py test
-
-# Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
-%files -n python2-%{srcname}
-%license LICENSE
-%doc README.rst
-%{python2_sitelib}/*
 
 %files -n python3-%{srcname}
 %license LICENSE
@@ -64,6 +42,18 @@ A script to generate assembly and module AsciiDoc files from templates
 %{_bindir}/newdoc
 
 %changelog
+* Fri Sep 25 2020 Marek Suchánek <msuchane@redhat.com> 1.5.1-1
+- Announce the deprecation of this version and the migration to the new one
+  (msuchane@redhat.com)
+
+* Tue Jun 23 2020 Marek Suchánek <msuchane@redhat.com> 1.5.0-1
+- Remove the remaining Python 2 code (msuchane@redhat.com)
+- Align the Optional formatting with the IBM Style Guide; #29
+  (msuchane@redhat.com)
+- Remove Python 2 packaging (marek.suchanek@protonmail.com)
+- Update outdated version information (marek.suchanek@protonmail.com)
+- Clarify newdoc install instructions (msuchane@redhat.com)
+
 * Mon Oct 07 2019 Marek Suchánek <msuchane@redhat.com> 1.4.3-1
 - Fix a reference to the renamed readme in the RPM spec (msuchane@redhat.com)
 - Updated the changelog (msuchane@redhat.com)
