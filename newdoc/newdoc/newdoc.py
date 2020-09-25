@@ -7,7 +7,8 @@ import io
 import argparse
 from string import Template
 
-NEWDOC_VERSION = "1.5.0"
+NEWDOC_VERSION = "1.5.1"
+DEPRECATION = "DEPRECATED:\nThis version of `newdoc` is now deprecated and will no longer receive any significant updates.\nPlease uninstall this version and migrate to the current version:\nhttps://github.com/redhat-documentation/newdoc"
 
 # The configparser module is called ConfigParser in Python2
 import configparser as cp
@@ -268,6 +269,8 @@ def main():
     """
     Main, executable procedure of the script
     """
+    print(DEPRECATION, "\n")
+
     # Build a command-line options parser
     parser = argparse.ArgumentParser()
 

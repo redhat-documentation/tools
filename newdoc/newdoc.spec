@@ -1,7 +1,7 @@
 %global srcname newdoc
 
 Name:           python-%{srcname}
-Version:        1.5.0
+Version:        1.5.1
 Release:        1
 Summary:        A script to generate assembly and module AsciiDoc files from templates
 

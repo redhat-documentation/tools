@@ -1,6 +1,8 @@
-###########################
-README: The `newdoc` script
-###########################
+########################################
+README: The `newdoc` script (DEPRECATED)
+########################################
+
+**DEPRECATED:** This version of `newdoc` is now deprecated and will no longer receive any significant updates. Please uninstall this version and migrate to the current version: https://github.com/redhat-documentation/newdoc.
 
 This script is used for generating empty module and assembly files when writing Red Hat or Fedora documentation in AsciiDoc. The generated files follow template guidelines set up by the Modular Documentation initiative: https://redhat-documentation.github.io/modular-docs/.
 
