@@ -1,0 +1,25 @@
+# uncomment next line to specify a directory to install macOS apps
+# cask_args appdir: '/Applications'
+
+# expand available formulae for installation aka 'brew tap'
+tap 'homebrew/cask' || true
+tap 'homebrew/bundle'
+tap 'homebrew/cask-drivers'
+tap 'homebrew/core'
+tap 'homebrew/services'
+
+# install packages aka 'brew install'
+brew 'git'
+brew 'wget'
+brew 'htop'
+brew 'tldr'
+brew 'podman'
+brew 'asciidoctor'
+brew 'ruby'
+brew 'brew-gem'
+
+# install whole applications aka 'brew install --cask'
+cask 'atom'
+cask 'virtualbox'
+cask 'iterm2'
+
