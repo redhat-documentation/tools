@@ -17,6 +17,7 @@ brew 'podman'
 brew 'asciidoctor'
 brew 'ruby'
 brew 'brew-gem'
+brew 'vale'
 
 # install whole applications aka 'brew install --cask'
 cask 'atom'
