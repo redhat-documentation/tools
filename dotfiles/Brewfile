@@ -20,7 +20,7 @@ brew 'brew-gem'
 brew 'vale'
 
 # install whole applications aka 'brew install --cask'
-cask 'atom'
+cask 'vscodium'
 cask 'virtualbox'
 cask 'iterm2'
 
